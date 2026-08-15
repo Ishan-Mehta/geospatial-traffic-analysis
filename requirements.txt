@@ -1,0 +1,17 @@
+# Core data processing
+pandas
+numpy
+
+# HTTP & API
+requests
+python-dotenv
+
+# Geospatial
+geopandas
+osmnx
+networkx
+shapely
+
+# Visualization
+matplotlib
+seaborn

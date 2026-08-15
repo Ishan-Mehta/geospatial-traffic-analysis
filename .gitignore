@@ -1,0 +1,68 @@
+# ===========================
+# Environment & Credentials
+# ===========================
+.env
+*.env
+
+# ===========================
+# Raw Data (too large for git)
+# ===========================
+data/raw/*.json
+data/raw/*.csv
+!data/raw/.gitkeep
+
+# ===========================
+# Generated Outputs
+# ===========================
+output/
+!output/.gitkeep
+*.gpkg
+*.graphml
+
+# Analysis results (reproducible)
+results/
+results_v0/
+
+# Pipeline intermediate files
+flattened_traffic_data.csv
+master_subroutes.csv
+
+# ===========================
+# Large Documents
+# ===========================
+# Keep flowchart.pdf but exclude large reports
+*Midsem Report*
+*midsem*
+
+# ===========================
+# Python
+# ===========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+*_venv/
+env/
+
+# ===========================
+# OS & IDE
+# ===========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ===========================
+# Archives
+# ===========================
+*.zip

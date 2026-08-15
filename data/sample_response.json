@@ -1,0 +1,123 @@
+[
+    {
+        "road_name": "Begur Main Road",
+        "request_timestamp": "2026-03-28T21:19:25.530023+00:00",
+        "api_response": {
+            "routes": [
+                {
+                    "legs": [
+                        {
+                            "distanceMeters": 1387,
+                            "duration": "242s",
+                            "staticDuration": "296s",
+                            "polyline": {
+                                "geoJsonLinestring": {
+                                    "coordinates": [
+                                        [
+                                            77.62783859999999,
+                                            12.9053977
+                                        ],
+                                        [
+                                            77.6276699,
+                                            12.905436
+                                        ],
+                                        [
+                                            77.6258477,
+                                            12.893403999999999
+                                        ]
+                                    ],
+                                    "type": "LineString"
+                                }
+                            },
+                            "steps": [
+                                {
+                                    "distanceMeters": 19,
+                                    "staticDuration": "6s",
+                                    "navigationInstruction": {
+                                        "maneuver": "DEPART",
+                                        "instructions": "Head west toward Begur Rd/Bommanahalli Rd\nRestricted usage road"
+                                    }
+                                },
+                                {
+                                    "distanceMeters": 1368,
+                                    "staticDuration": "290s",
+                                    "navigationInstruction": {
+                                        "maneuver": "TURN_LEFT",
+                                        "instructions": "Turn left onto Begur Rd/Bommanahalli Rd\nContinue to follow Begur Rd\nPass by the gas station (on the right)"
+                                    }
+                                },
+                                {
+                                    "staticDuration": "0s"
+                                }
+                            ],
+                            "travelAdvisory": {
+                                "speedReadingIntervals": [
+                                    {
+                                        "startPolylinePointIndex": 0,
+                                        "endPolylinePointIndex": 24,
+                                        "speed": "NORMAL"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+
+
+                        }
+                    ],
+                    "distanceMeters": 52655,
+                    "duration": "5437s",
+                    "staticDuration": "6836s",
+                    "polyline": {
+                        "geoJsonLinestring": {
+                            "coordinates": [
+                                [
+                                    77.62783859999999,
+                                    12.9053977
+                                ],
+                                [
+                                    77.4911091,
+                                    13.016582100000003
+                                ]
+                            ],
+                            "type": "LineString"
+                        }
+                    },
+                    "description": "Begur Rd",
+                    "travelAdvisory": {
+                        "speedReadingIntervals": [
+                            {
+                                "startPolylinePointIndex": 0,
+                                "endPolylinePointIndex": 497,
+                                "speed": "NORMAL"
+                            },
+                            {
+                                "startPolylinePointIndex": 497,
+                                "endPolylinePointIndex": 501,
+                                "speed": "SLOW"
+                            },
+                            {
+                                "startPolylinePointIndex": 501,
+                                "endPolylinePointIndex": 514,
+                                "speed": "NORMAL"
+                            },
+                            {
+                                "startPolylinePointIndex": 514,
+                                "endPolylinePointIndex": 523,
+                                "speed": "SLOW"
+                            },
+                            {
+                                "startPolylinePointIndex": 523,
+                                "endPolylinePointIndex": 615,
+                                "speed": "NORMAL"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "road_name": "Kaikondanahalli Main Road"
+    }
+]
