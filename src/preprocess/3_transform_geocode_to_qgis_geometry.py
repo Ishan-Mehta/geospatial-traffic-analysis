@@ -18,7 +18,7 @@ OUTPUT_FILE = '../../output/qgis_optimised_blr_routes.geojson'
 ########################################################################
 
 # --- 1. SETUP & LOAD MAP (Clean & Undirected) ---
-GRAPH_FILENAME = "bangalore_drive.graphml"
+GRAPH_FILENAME = "../../output/bangalore_drive.graphml"
 
 # Force cache settings
 ox.settings.use_cache = True

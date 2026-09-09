@@ -10,7 +10,7 @@ import time
 # ==========================================
 # Update this variable to point to the folder containing your 84 JSON files.
 # Example: '/Users/yourname/Documents/traffic_data_scrapes'
-INPUT_JSON_DIR = '../../data/raw' 
+INPUT_JSON_DIR = '../../data/raw/gmaps_data/' 
 
 # These are the output file names. You can change the paths if you want them 
 # saved in a specific output directory.

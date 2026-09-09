@@ -9,12 +9,11 @@ from datetime import datetime, timezone
 # ================= CONFIGURATION =================
 load_dotenv()
 
-API_KEY = os.getenv('GOOGLE-MAPS-API-KEY')  # Replace with your actual key
+API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
 INPUT_CSV = "../../data/processed/geocoded_optimised_blr_roads.csv"
 
 # Folder Setup
 DATA_DIR = "../../data/raw/gmaps_data"
-
 
 # API Endpoint
 URL = "https://routes.googleapis.com/directions/v2:computeRoutes"

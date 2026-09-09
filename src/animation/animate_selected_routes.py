@@ -174,7 +174,7 @@ def main():
     )
     parser.add_argument(
         "--file-pattern",
-        default="../../data/raw/bangalore_routes_response_*.json",
+        default="../../data/raw/gmaps_data/*.json",
         help="Glob pattern for source JSON files.",
     )
     parser.add_argument(
@@ -194,7 +194,7 @@ def main():
     )
     parser.add_argument(
         "--output-dir",
-        default="../../output/route_exports",
+        default="../../output/route_animation",
         help="Directory where per-route outputs are written.",
     )
     parser.add_argument(

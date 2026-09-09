@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 # ================= CONFIGURATION =================
 load_dotenv()
 
-API_KEY = os.getenv('GOOGLE-MAPS-API-KEY')  # Replace with your actual key
+API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')  # Replace with your actual key
 INPUT_CSV = "../../data/processed/geocoded_optimised_blr_roads.csv"
 
 # Folder Setup
