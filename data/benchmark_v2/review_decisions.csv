@@ -1,0 +1,24 @@
+landmark_id,decision,reason,approved_by,date
+L01,APPROVE,Group A: correct metro station; Google official name 'Mahatma Gandhi Road',Ishan,2026-10-01
+L05,APPROVE,Group A: correct junction; Google name 'M G ROAD-TRINITY',Ishan,2026-10-01
+L06,APPROVE,Group A: correct bus station; Google name 'Shivajinagara',Ishan,2026-10-01
+L31,APPROVE,Group A: correct train station; Google name 'Krishnarajapuram',Ishan,2026-10-01
+L38,APPROVE,Group A: correct hospital; Google name 'Manipal Hospitals',Ishan,2026-10-01
+L39,APPROVE,Group A: correct business park; Google name 'Embassy Golf Links',Ishan,2026-10-01
+L41,APPROVE,Group A: top result is the real junction on ITPL Main Rd; 2nd namesake 1.6 km away ignored,Ishan,2026-10-01
+L43,APPROVE,Group A: correct junction bus stop; Google name 'Ibbalur',Ishan,2026-10-01
+L45,APPROVE,Group A: correct train station; Google name 'Karmelaram',Ishan,2026-10-01
+L46,APPROVE,Group A: correct junction; Google name 'Central Silk Board/Hosur Road',Ishan,2026-10-01
+L59,APPROVE,Group A: correct temple; Google name 'Shri Doddabasavanna Temple',Ishan,2026-10-01
+L63,APPROVE,Group A: correct metro station; Google name 'Mysuru Road',Ishan,2026-10-01
+L64,APPROVE,Group A: correct terminal; Google name 'Kengeri BMTC TTMC',Ishan,2026-10-01
+L68,APPROVE,Group A: correct junction bus stop; Google name 'Sumanahalli Bus Stop',Ishan,2026-10-01
+L33,APPROVE,Group B: large site; point 187 m from road; Google Routes snaps to road,Ishan,2026-10-01
+L34,APPROVE,Group B: large site (renamed ITPB); point 202 m from road,Ishan,2026-10-01
+L37,APPROVE,Group B: large site; point 168 m from road,Ishan,2026-10-01
+L52,APPROVE,Group B: large campus; point 187 m from road,Ishan,2026-10-01
+L58,APPROVE,Group B: large hospital campus; point 151 m from road,Ishan,2026-10-01
+L09,DROP,Group C: point 493 m inside palace grounds; central zone already well covered,Ishan,2026-10-01
+L44,DROP,Group C: Google returned RMZ Ecoworld (different park ~1 km away); name genuinely ambiguous,Ishan,2026-10-01
+L54,DROP,Group C: outside local OSM graph (495 m from nearest graph road); BBMP-limits rule D-16,Ishan,2026-10-01
+L19,DROP,Group C: two queries (incl. gate-specific) both returned the campus centroid 282 m from road; no gate point available,Ishan,2026-10-01

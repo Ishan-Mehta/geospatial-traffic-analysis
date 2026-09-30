@@ -5,7 +5,7 @@ L03,Town Hall,"Bengaluru Town Hall, JC Road, Bengaluru",landmark,J C Road,Centra
 L04,Richmond Circle,"Richmond Circle, Richmond Road, Bengaluru",junction,Richmond,Central,12.9642,77.5978,
 L05,Trinity Circle,"Trinity Circle, MG Road, Bengaluru",junction,Trinity,Central,12.9727,77.6170,
 L06,Shivajinagar Bus Station,"Shivajinagar Bus Station, Shivaji Nagar, Bengaluru",bus_station,Shivaji Nagar,Central,12.9857,77.6049,
-L07,Lalbagh Main Gate,"Lalbagh Botanical Garden Main Gate, Lalbagh Road, Bengaluru",landmark,Lalbagh,Central,12.9507,77.5848,
+L07,Lalbagh Metro Station,"Lalbagh Metro Station, RV Road, Bengaluru",metro_station,Lalbagh,Central,12.9466,77.5800,replaces Lalbagh Main Gate (Google returned garden centroid 276 m from road); rough coordinate uncertain
 L08,Victoria Hospital,"Victoria Hospital, Fort Road, Kalasipalya, Bengaluru",hospital,Kalasipalya,Central,12.9616,77.5737,
 L09,Bangalore Palace,"Bangalore Palace, Palace Road, Vasanth Nagar, Bengaluru",landmark,Vasanth Nagar,Central,12.9987,77.5921,large grounds
 L10,Mekhri Circle,"Mekhri Circle, Bellary Road, Bengaluru",junction,Mekhri,Central,13.0142,77.5838,
@@ -17,7 +17,7 @@ L15,Yeshwanthpur Metro Station,"Yeshwanthpur Metro Station, Tumkur Road, Bengalu
 L16,Jalahalli Cross,"Jalahalli Cross, Tumkur Road, Bengaluru",junction,Jalahalli,North,13.0430,77.5195,
 L17,Peenya Metro Station,"Peenya Metro Station, Tumkur Road, Peenya, Bengaluru",metro_station,Peenya,North,13.0330,77.5330,
 L18,Nagasandra Metro Station,"Nagasandra Metro Station, Tumkur Road, Bengaluru",metro_station,Nagasandra,North,13.0479,77.5001,
-L19,IISc Main Gate,"Indian Institute of Science Main Gate, CV Raman Road, Bengaluru",campus,CV Raman,North,13.0155,77.5705,large campus: gate used
+L19,IISc Main Gate,"IISc Main Gate, CV Raman Avenue, Sadashivanagar, Bengaluru",campus,CV Raman,North,13.0155,77.5705,large campus: gate used; retry with gate-specific query (1st query returned campus centroid)
 L20,Manyata Tech Park,"Manyata Embassy Business Park, Nagawara, Bengaluru",tech_park,Nagawara,North,13.0457,77.6206,large site
 L21,MS Ramaiah Hospital,"Ramaiah Memorial Hospital, New BEL Road, MSR Nagar, Bengaluru",hospital,MSR Nagar,North,13.0306,77.5680,
 L22,Hennur Cross,"Hennur Cross, Hennur Main Road, Kalyan Nagar, Bengaluru",junction,Hennur,North,13.0270,77.6390,
