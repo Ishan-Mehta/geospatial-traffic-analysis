@@ -29,7 +29,10 @@ Details live in the linked docs; this page only collects the warnings.
 - Reference week: **Mon 5 – Sun 11 Oct 2026**. **Sat 10 Oct = Mahalaya Amavasya (public holiday)** — tagged in
   `calendar_note`; the LLM is told only "Saturday", so report Saturday results **with and without** it. Sun 11 Oct
   (Navaratri begins) is deliberately not tagged — kept as a normal weekend day. (D-37)
-- Deadline: all Google queries must be sent **before Mon 5 Oct 2026, 07:30 IST**; otherwise switch to the week of Mon 26 Oct.
+- Google run completed 2026-10-01 (2,016/2,016).
+- **staticDuration ≠ free-flow:** Google's staticDuration is the ETA from historical traffic only. Never call
+  duration/static "congestion vs free-flow"; use the traffic index (duration ÷ route's fastest of 28 queries). (D-48)
+- Final tags (from Google paths) are **unbalanced** (43 arterial / 17 mixed / 12 sub-arterial) — see D-49.
 
 ## 3. What the LLM numbers mean
 - Condition A = **lowest thinking level** (`LOW` on gemini-3.8-flash), **not "no thinking"** — Gemini 3.x cannot disable

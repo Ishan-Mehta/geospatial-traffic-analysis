@@ -124,9 +124,11 @@ def route_summary(q: pd.DataFrame, od: pd.DataFrame, band_medians: dict) -> pd.D
         on_path = g[g.path_key == modal_key]
         pref = on_path[(on_path.day == ref_day) & (on_path.slot_id == ref_slot)]
         ref = pref.iloc[0] if len(pref) else on_path.iloc[0]
-        band = band_of(ref.distance_m)
+        band = band_of(ref.distance_m) or (C.V2_BANDS[-1][0] if ref.distance_m >= C.V2_BANDS[-1][2] else
+                                           C.V2_BANDS[0][0])   # Google 25–29 km -> top band; < 1 km -> B1 (D-48)
         rt = road_type_of(ref.arterial_share_google)
         med = band_medians.get(band, np.nan)
+        fastest = g.loc[g.duration_s.idxmin()]
         exp = "high" if ref.hotspot_share_google >= med else "low"
         wk, we = g[~g.is_weekend], g[g.is_weekend]
         ratio = lambda df: (df[df.slot_id.isin(PEAKS)].duration_s.mean() / df[df.slot_id == "NIGHT"].duration_s.mean()
@@ -147,6 +149,8 @@ def route_summary(q: pd.DataFrame, od: pd.DataFrame, band_medians: dict) -> pd.D
             "duration_min_s": int(g.duration_s.min()), "duration_median_s": int(g.duration_s.median()),
             "duration_max_s": int(g.duration_s.max()),
             "peak_night_ratio_weekday": round(ratio(wk), 3), "peak_night_ratio_weekend": round(ratio(we), 3),
+            "fastest_query": f"{fastest.day} {fastest.slot_id}",
+            "traffic_index_max": round(float(g.duration_s.max() / g.duration_s.min()), 3),
             "endpoints_ok_all": bool(g.endpoints_ok.all()),
             "max_endpoint_offset_m": float(np.nanmax(g[["start_offset_m", "end_offset_m"]].values)),
             "median_unmatched_frac": float(g.unmatched_frac.median()),
@@ -179,13 +183,13 @@ def make_plots(q: pd.DataFrame, r: pd.DataFrame, fig_dir):
         print(f"  plot skipped (q1 Google vs provi...): {e}")
 
     try:
-        # q2 congestion heatmap (median duration / static) by slot × day
-        piv = q.pivot_table(values="congestion_ratio", index="slot_id", columns="day", aggfunc="median")
+        # q2 traffic-index heatmap (duration / route's fastest duration) by slot × day
+        piv = q.pivot_table(values="traffic_index", index="slot_id", columns="day", aggfunc="median")
         piv = piv.reindex(index=slots, columns=C.V2_DAYS)
         fig, ax = plt.subplots(figsize=(10, 3.8))
         sns.heatmap(piv, annot=True, fmt=".2f", cmap="Reds", ax=ax)
-        ax.set_title("q2 — Median congestion ratio (predicted duration / no-traffic duration)")
-        fig.savefig(fig_dir / "q2_congestion_heatmap.png", dpi=150, bbox_inches="tight")
+        ax.set_title("q2 — Median traffic index (predicted duration / route's fastest of 28 queries)")
+        fig.savefig(fig_dir / "q2_traffic_index_heatmap.png", dpi=150, bbox_inches="tight")
         plt.close(fig)
     except Exception as e:
         print(f"  plot skipped (q2 congestion heat...): {e}")
@@ -283,6 +287,9 @@ def main():
     net = OsmNetwork()
 
     q = process_queries(recs, od, net, hot_union)
+    # Traffic index = duration / the route's fastest duration over its 28 queries (D-48). Google's staticDuration is
+    # "ETA using historical traffic only", not free-flow, so duration/static is not a congestion measure.
+    q["traffic_index"] = (q.duration_s / q.groupby("route_id").duration_s.transform("min")).round(3)
     q.to_csv(gdir / C.V2_GMAPS_QUERIES_CSV, index=False)
     r = route_summary(q, od, band_medians)
     r.to_csv(gdir / C.V2_GMAPS_ROUTES_CSV, index=False)

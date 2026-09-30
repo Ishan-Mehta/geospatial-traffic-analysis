@@ -55,13 +55,16 @@ Decisions and their reasons are in [DECISIONS.md](DECISIONS.md).
   `TRAFFIC_AWARE_OPTIMAL` + `trafficModel BEST_GUESS`, future `departureTime` = slot time on that weekday of one fixed
   **reference week** (pinned Mon 5 – Sun 11 Oct 2026, D-37; stored in `gmaps/run_manifest.json`; `calendar_note` tags the Sat 10 Oct public holiday; Sun 11 Oct deliberately untagged). Semantics: **predicted typical
   traffic**, not live. Up to 3 routes returned; the **primary route = routes[0]** is the ground truth; alternatives are stored.
-- **Congestion ratio** = duration / staticDuration of the primary route (≥ 1 means slower than free-flow).
+- **Traffic index** = duration ÷ the route's fastest duration over its 28 queries (≥ 1; 1 = the route's best case) — the
+  traffic measure used in the metrics (D-48). `congestion_ratio` = duration / staticDuration is kept for reference only:
+  Google's staticDuration is the ETA from *historical* traffic, not free-flow (ratio < 1 at night).
 - **Endpoint check**: distance between Google's leg start/end and our coordinate ≤ max(150 m, landmark `snap_m` + 100 m) (D-29).
-- **Map-matching**: sample every 20 m along Google's polyline, nearest OSM edge within 25 m; ordered unique `name` tags =
-  **ground-truth road sequence**; arterial share = share of matched samples on motorway/trunk/primary(+links);
+- **Map-matching**: sample every 20 m along Google's polyline, nearest OSM edge within 25 m; a name counts only if it holds
+  ≥ 3 consecutive samples (~60 m, removes junction flicker, D-47); ordered unique `name` tags = **ground-truth road sequence**; arterial share = share of matched samples on motorway/trunk/primary(+links);
   `unmatched_frac` reported as a quality measure. Google's step instructions give a second, independent road list.
 - **Final tags** (used in all analysis): band, road type and hotspot exposure recomputed from the primary route of the
-  reference query (Wednesday MID_DAY, D-28), using the same thresholds and the Phase-1 per-band hotspot medians.
+  most frequent Google path (tie → Wednesday MID_DAY, D-28), same thresholds and Phase-1 per-band hotspot medians; Google routes
+  of 25–29 km go into the top band (D-48).
 - **Path stability**: number of distinct Google polylines across a route's 28 queries.
 - **Peak/night ratio** (Google): mean duration of AM_PEAK+PM_PEAK ÷ NIGHT duration, weekdays and weekends separately.
 
@@ -76,4 +79,4 @@ Decisions and their reasons are in [DECISIONS.md](DECISIONS.md).
 - **valid_numbers**: estimated distance and time both numeric and > 0.
 
 ## 7. Planned metrics (Phase 4, detail filled in then)
-Log-ratio ln(llm/google) for distance and time; absolute error; over/under direction; medians. Time-of-day sensitivity (LLM peak/night ratio vs Google's). Traffic awareness (Spearman: LLM label vs Google congestion ratio). Road validity (LLM road names fuzzy-matching OSM names). Road overlap (Jaccard LLM roads vs the map-matched Google road sequence). Repeat spread (consistency subset). Naive baseline: straight line × 1.22 detour at a per-slot typical speed. All broken down by band, road type, hotspot exposure (final tags), slot, day; grounding-flagged routes reported separately.
+Log-ratio ln(llm/google) for distance and time; absolute error; over/under direction; medians. Time-of-day sensitivity (LLM peak/night ratio vs Google's). Traffic awareness (Spearman: LLM label vs Google traffic index). Road validity (LLM road names fuzzy-matching OSM names). Road overlap (Jaccard LLM roads vs the map-matched Google road sequence). Repeat spread (consistency subset). Naive baseline: straight line × 1.22 detour at a per-slot typical speed. All broken down by band, road type, hotspot exposure (final tags), slot, day; grounding-flagged routes reported separately.

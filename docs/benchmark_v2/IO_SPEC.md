@@ -143,7 +143,7 @@ Join key: **(route_id, day, slot_id)** — identical on both sides by constructi
 | Distance | `estimated_distance_km` | `distance_m / 1000` (primary route) | ln(llm/google), abs error, over/under |
 | Time (with traffic) | `estimated_time_minutes` | `duration_s / 60` | ln ratio, abs error, over/under |
 | Time vs no-traffic | `estimated_time_minutes` | `static_duration_s / 60` | ln ratio (does the LLM add traffic?) |
-| Traffic awareness | `traffic_awareness` → none 0, light 1, moderate 2, heavy 3 | `congestion_ratio` | Spearman ρ |
+| Traffic awareness | `traffic_awareness` → none 0, light 1, moderate 2, heavy 3 | `traffic_index` (duration ÷ route's fastest, D-48) | Spearman ρ |
 | Time-of-day sensitivity | peak/night ratio of `estimated_time_minutes` per route | peak/night ratio of `duration_s` | difference / correlation |
 | Road validity | each name in `suggested_route` | all OSM street names in Bangalore | share that fuzzy-match (hallucination check) |
 | Road overlap | set of `suggested_route` names | `osm_road_seq` (+ `google_step_roads`) | Jaccard |
