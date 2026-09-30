@@ -382,9 +382,27 @@ def evaluate_geocodes(seed: pd.DataFrame, provider: str):
                      "snap_m": round(snap_m, 1), "status": "OK" if not flags else "FLAG",
                      "flags": "; ".join(flags)})
     out = pd.DataFrame(rows)
+
+    # Human review decisions (Gate 2) live in review_decisions.csv so re-running the checks
+    # never loses them: APPROVE turns a FLAG into APPROVED; DROP excludes the landmark.
+    out["review_decision"], out["review_reason"] = "", ""
+    if C.V2_REVIEW_DECISIONS_CSV.exists():
+        dec = pd.read_csv(C.V2_REVIEW_DECISIONS_CSV).set_index("landmark_id")
+        for i, r in out.iterrows():
+            if r.landmark_id not in dec.index:
+                continue
+            d = dec.loc[r.landmark_id]
+            out.at[i, "review_decision"], out.at[i, "review_reason"] = d.decision, d.reason
+            if d.decision == "DROP":
+                out.at[i, "status"] = "DROPPED"
+            elif d.decision == "APPROVE" and r.status == "FLAG":
+                out.at[i, "status"] = "APPROVED"
     out.to_csv(C.V2_LANDMARKS_GEOCODED_CSV, index=False)
     out[out.status != "OK"].to_csv(C.V2_LANDMARKS_REVIEW_CSV, index=False)
     print(out.status.value_counts().to_string())
+    unresolved = out[out.status.isin(["FLAG", "NOT_QUERIED"])]
+    if len(unresolved):
+        print(f"UNRESOLVED (need review): {', '.join(unresolved.landmark_id)}")
     print(f"Saved {C.V2_LANDMARKS_GEOCODED_CSV.name} and {C.V2_LANDMARKS_REVIEW_CSV.name}")
     fig_dir = C.V2_FIGURES_DIR / "phase1"
     plot_landmarks(out, fig_dir, net, title_suffix="geocoded")
@@ -644,9 +662,9 @@ def plot_landmarks(lm, fig_dir, net, title_suffix=""):
     for kind, grp in pts.groupby("kind"):
         ax.scatter(grp.plng, grp.plat, s=40, label=kind, zorder=3)
     if "status" in lm:
-        fl = lm[lm.status == "FLAG"]
+        fl = lm[lm.status.isin(["FLAG", "DROPPED"])]
         ax.scatter(fl["lng"], fl["lat"], s=160, facecolors="none", edgecolors="red", lw=1.5,
-                   label="FLAGGED", zorder=4)
+                   label="FLAGGED / DROPPED", zorder=4)
     for r in pts.itertuples():
         ax.annotate(r.landmark_id, (r.plng, r.plat), fontsize=7, xytext=(3, 3), textcoords="offset points")
     ax.legend(loc="upper right", fontsize=8)
@@ -657,7 +675,7 @@ def plot_landmarks(lm, fig_dir, net, title_suffix=""):
 
 def plot_geocode_quality(lm, fig_dir):
     import matplotlib.pyplot as plt
-    q = lm[lm.status.isin(["OK", "FLAG"])]
+    q = lm[lm.status.isin(["OK", "FLAG", "APPROVED", "DROPPED"]) & lm.lat.notna()]
     checks = {
         "name_score": q.name_score >= C.V2_NAME_SCORE_MIN,
         "area": q.area_in_address | (q.approx_dist_m <= C.V2_APPROX_MAX_M),

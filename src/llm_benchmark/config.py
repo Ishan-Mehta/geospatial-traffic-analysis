@@ -117,6 +117,7 @@ V2_FIGURES_DIR = V2_DIR / "figures"
 V2_LANDMARKS_SEED_CSV = V2_DIR / "landmarks_seed.csv"
 V2_LANDMARKS_GEOCODED_CSV = V2_DIR / "landmarks_geocoded.csv"
 V2_LANDMARKS_REVIEW_CSV = V2_DIR / "landmarks_review.csv"
+V2_REVIEW_DECISIONS_CSV = V2_DIR / "review_decisions.csv"       # Gate-2 human decisions
 V2_HOTSPOT_LEGS_GEOJSON = V2_DIR / "hotspot_legs.geojson"
 V2_CANDIDATE_PAIRS_CSV = V2_DIR / "candidate_pairs.csv"
 V2_OD_PAIRS_CSV = V2_DIR / "od_pairs.csv"

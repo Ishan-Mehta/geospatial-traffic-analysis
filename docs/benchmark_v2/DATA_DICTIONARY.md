@@ -26,9 +26,13 @@ Seed columns plus:
 | `approx_dist_m` | result ↔ approximate coordinate |
 | `ambiguity_m` | distance to the farthest other good name match (0 = none) |
 | `snap_m` | distance to nearest drivable OSM edge |
-| `status` | OK · FLAG · NOT_QUERIED · APPROVED (set manually after review) |
-| `flags` | Reasons for FLAG |
+| `status` | OK (all checks pass) · FLAG (needs review) · APPROVED (flagged, approved in `review_decisions.csv`) · DROPPED (excluded by review) · NOT_QUERIED |
+| `flags` | Reasons for FLAG (kept after approval, for the record) |
+| `review_decision`, `review_reason` | Copied from `review_decisions.csv` |
 `landmarks_review.csv` = rows with status ≠ OK.
+
+## review_decisions.csv — Gate-2 human decisions (read by `geocode`)
+`landmark_id`, `decision` (APPROVE / DROP), `reason`, `approved_by`, `date`. Only landmarks with a decision appear.
 
 ## hotspot_legs.geojson — `1b_build_od_pairs.py legs`
 One LineString per plausible Stage-4 leg (564). Columns: `sub_route_id`, `road_name` (BBMP road the leg belongs to), `distance_meters`, `straight_m`, `detour`, `snapshot_count`, `mean_live_s`, `std_live_s`, `cv_live` (= std/mean), `is_hotspot` (top 20 % CV).
