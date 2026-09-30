@@ -1,0 +1,11 @@
+route_id,origin_name,dest_name,band,road_type,hotspot_exposure,group
+R047,Banashankari Bus Station,Kempegowda Bus Station (Majestic),B2_5-12km,sub_arterial,high,B2_5-12km|sub_arterial|high_hotspot
+R058,Victoria Hospital,Magadi Road Metro Station,B1_1-5km,mixed,low,B1_1-5km|mixed|low_hotspot
+R067,Hennur Cross,Whitefield (Kadugodi) Metro Station,B3_12-25km,arterial,high,B3_12-25km|arterial|high_hotspot
+R048,Kempegowda Bus Station (Majestic),Jalahalli Cross,B2_5-12km,sub_arterial,low,B2_5-12km|sub_arterial|low_hotspot
+R069,Kundalahalli Gate,Hennur Cross,B3_12-25km,mixed,high,B3_12-25km|mixed|high_hotspot
+R020,Magadi Road Metro Station,Sumanahalli Junction,B1_1-5km,arterial,low,B1_1-5km|arterial|low_hotspot
+R059,Marathahalli Bridge,Embassy Tech Village,B1_1-5km,sub_arterial,high,B1_1-5km|sub_arterial|high_hotspot
+R032,Nagarbhavi Circle,Carmelaram Railway Station,B3_12-25km,arterial,low,B3_12-25km|arterial|low_hotspot
+R027,MG Road Metro Station,Jayadeva Hospital,B2_5-12km,mixed,high,B2_5-12km|mixed|high_hotspot
+R028,Jayadeva Hospital,Nagarbhavi Circle,B2_5-12km,mixed,low,B2_5-12km|mixed|low_hotspot

@@ -50,5 +50,30 @@ Decisions and their reasons are in [DECISIONS.md](DECISIONS.md).
 - Candidates within a group are ordered by a fixed hash → deterministic, no hidden preference.
 - Stop at `V2_TARGET_ROUTES` (72) or when no group can add. Unfilled groups are reported.
 
-## 5. Planned metrics (Phase 4, detail filled in then)
-Log-ratio ln(llm/google) for distance and time; absolute error; over/under direction; medians. Time-of-day sensitivity (LLM peak/night ratio vs Google's). Traffic awareness (Spearman: LLM label vs Google congestion). Road validity (LLM road names fuzzy-matching OSM names). Road overlap (Jaccard LLM roads vs OSM names along Google polyline). Repeat spread. Naive baseline: straight line × detour factor (from Phase-1 plot 8) at a per-slot typical speed. All broken down by band, road type, hotspot, slot, day.
+## 5. Phase 2 — Google ground truth
+- **Query**: Google Routes `computeRoutes`, origin/destination = landmark Google coordinates, no via points,
+  `TRAFFIC_AWARE_OPTIMAL` + `trafficModel BEST_GUESS`, future `departureTime` = slot time on that weekday of one fixed
+  **reference week** (next week's Monday at first run; stored in `gmaps/run_manifest.json`). Semantics: **predicted typical
+  traffic**, not live. Up to 3 routes returned; the **primary route = routes[0]** is the ground truth; alternatives are stored.
+- **Congestion ratio** = duration / staticDuration of the primary route (≥ 1 means slower than free-flow).
+- **Endpoint check**: distance between Google's leg start/end and our coordinate ≤ max(150 m, landmark `snap_m` + 100 m) (D-29).
+- **Map-matching**: sample every 20 m along Google's polyline, nearest OSM edge within 25 m; ordered unique `name` tags =
+  **ground-truth road sequence**; arterial share = share of matched samples on motorway/trunk/primary(+links);
+  `unmatched_frac` reported as a quality measure. Google's step instructions give a second, independent road list.
+- **Final tags** (used in all analysis): band, road type and hotspot exposure recomputed from the primary route of the
+  reference query (Wednesday MID_DAY, D-28), using the same thresholds and the Phase-1 per-band hotspot medians.
+- **Path stability**: number of distinct Google polylines across a route's 28 queries.
+- **Peak/night ratio** (Google): mean duration of AM_PEAK+PM_PEAK ÷ NIGHT duration, weekdays and weekends separately.
+
+## 6. Phase 3 — LLM queries
+- **Benchmark prompt**: v1 wording and schema (D-13); origin/destination = `llm_name`; weekday name; slot label.
+- **Conditions**: A = lowest thinking the model allows (Gemini 3.x: `thinking_level=MINIMAL`; thinking cannot be fully
+  disabled), B = `HIGH`; temperature 1.0 explicit; thought tokens logged per answer (D-26).
+- **Samples**: 1 per query; consistency subset = 10 routes (`consistency_routes.csv`, balanced greedy pick) × 2 extra
+  condition-A samples (sample_idx 1, 2).
+- **Grounding check**: separate prompt "Where exactly is <landmark>?" → lat/lng; **misplaced** if > 2 km from the Google
+  coordinate; routes with a misplaced endpoint are *flagged* (reported separately), not removed (D-34).
+- **valid_numbers**: estimated distance and time both numeric and > 0.
+
+## 7. Planned metrics (Phase 4, detail filled in then)
+Log-ratio ln(llm/google) for distance and time; absolute error; over/under direction; medians. Time-of-day sensitivity (LLM peak/night ratio vs Google's). Traffic awareness (Spearman: LLM label vs Google congestion ratio). Road validity (LLM road names fuzzy-matching OSM names). Road overlap (Jaccard LLM roads vs the map-matched Google road sequence). Repeat spread (consistency subset). Naive baseline: straight line × 1.22 detour at a per-slot typical speed. All broken down by band, road type, hotspot exposure (final tags), slot, day; grounding-flagged routes reported separately.

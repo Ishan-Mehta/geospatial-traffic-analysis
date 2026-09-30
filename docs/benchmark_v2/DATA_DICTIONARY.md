@@ -71,5 +71,29 @@ Selected routes as LineStrings (provisional OSM paths) with all `od_pairs.csv` c
 ## rehearsal_approx/
 Same outputs as above, computed from **approximate** coordinates to test the pipeline before paying for geocoding. Not benchmark data; kept for transparency.
 
+## consistency_routes.csv — `3_query_llm_v2.py select-consistency`
+The 10 routes that get 2 extra condition-A samples: `route_id`, names, `band`, `road_type`, `hotspot_exposure`, `group`.
+
+## gmaps/ — Phase 2 (`4_query_gmaps_v2.py`, `4b_process_gmaps_v2.py`)
+| File | Content |
+|---|---|
+| `run_manifest.json` | reference Monday, routing preference, traffic model, alternatives flag, field mask, days, slots, `od_pairs.csv` md5, "predicted" semantics |
+| `gmaps_responses.jsonl` | one line per query attempt: `route_id, day, slot_id, slot_time, departure_ist, departure_utc, status (ok/error), error, http_status, routes[] {distance_m, duration_s, static_duration_s, description, route_labels, polyline [lng,lat], start_location, end_location, steps[] {distance_m, instruction, maneuver}}, n_routes, request (no key), query_timestamp, latency_s, mock, traffic_semantics` |
+| `gmaps_queries.csv` | one row per OK query: distance/duration/static, `congestion_ratio`, `n_routes`, `alt_distances_m`, `start/end_offset_m`, `start/end_allowed_m`, `endpoints_ok`, `path_key` (hash of polyline), `osm_road_seq`, `n_osm_roads`, `arterial_share_google`, `unmatched_frac`, `hotspot_overlap_m_google`, `hotspot_share_google`, `google_step_roads` |
+| `gmaps_routes.csv` | one row per route: `reference_query`, Google vs provisional distance / band / arterial share / road type / hotspot exposure / group, `group_changed`, `n_distinct_paths`, duration min/median/max, `peak_night_ratio_weekday/weekend`, `endpoints_ok_all`, `max_endpoint_offset_m`, `median_unmatched_frac` |
+| `../figures/phase2/q1…q7` | Google vs OSM length · congestion heatmap slot×day · duration by slot per band · tag changes · endpoint offsets · path stability · peak/night ratio |
+
+## llm/ — Phase 3 (`3_query_llm_v2.py`)
+| File | Content |
+|---|---|
+| `<model>_grounding.jsonl` | per landmark: `landmark_id, llm_name, prompt`, answer `{locality, latitude, longitude, confidence}`, run metadata (below) |
+| `<model>_grounding_results.csv` | Google vs LLM point, `error_m`, `misplaced` (> 2 km) |
+| `<model>_grounding_route_flags.csv` | per route: `origin_misplaced`, `dest_misplaced`, `grounding_flag` |
+| `<model>_A.jsonl`, `<model>_B.jsonl` | per query × sample: `route_id, day, slot_id, slot_label, sample_idx, origin/dest id+name, prompt`, `parsed_response {suggested_route, estimated_distance_km, estimated_time_minutes, traffic_awareness, reasoning}`, `raw_response`, `valid_numbers` + metadata |
+Run metadata on every LLM record: `kind, condition, model_key, provider, model_name, model_version, settings {temperature, thinking_level}, system_prompt_sha1, status, attempts, prompt_tokens, output_tokens, thought_tokens, latency_s, error, error_kind, mock, query_timestamp`.
+
+## mock/ — git-ignored
+Same structure as `gmaps/`, `llm/`, `figures/` but produced with `--mock` (fake answers). Pipeline tests only, never results.
+
 ## cache/places/, cache/geocoding/
 Raw API responses keyed by a hash of the query (reruns are free). Safe to keep; do not edit.

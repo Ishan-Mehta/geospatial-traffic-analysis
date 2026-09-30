@@ -15,6 +15,9 @@ data/raw/gmaps_data/
 # OSMnx HTTP cache (large, re-downloadable)
 src/analysis/cache/
 
+# v2 mock outputs (offline pipeline tests; regenerate with --mock)
+data/benchmark_v2/mock/
+
 # ===========================
 # Generated Outputs
 # ===========================
