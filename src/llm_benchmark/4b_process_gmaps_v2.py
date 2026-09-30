@@ -30,7 +30,7 @@ from v2_common import (OsmNetwork, band_of, basemap, haversine_m, load_hotspot_u
                        road_type_of, sha1_short)
 
 PEAKS = ("AM_PEAK", "PM_PEAK")
-_STEP_ROAD = re.compile(r"\b(?:onto|on)\s+(.+?)(?:\s+toward\b|\s+Pass\b|\s+Destination\b|\n|$)")
+_STEP_ROAD = re.compile(r"\b(?:onto|on|follow)\s+(.+?)(?:\s+toward\b|\s+Pass\b|\s+Destination\b|\n|$)")
 
 
 def base_dir(mock: bool):
@@ -41,11 +41,14 @@ def step_roads(steps: list) -> list:
     """Ordered road names mentioned in Google's turn-by-turn instructions ('Turn left onto X')."""
     names = []
     for s in steps:
-        for line in str(s.get("instruction", "")).split("\n"):
+        text = re.sub(r"\([^)]*\)", "", str(s.get("instruction", "")))     # drop "(on the right)" etc.
+        for line in text.split("\n"):
+            if line.strip().lower().startswith(("pass by", "destination")):
+                continue
             m = _STEP_ROAD.search(line)
             if m:
                 n = m.group(1).strip().rstrip(".")
-                if n and (not names or names[-1] != n):
+                if n and not n.lower().startswith("the ") and (not names or names[-1] != n):
                     names.append(n)
     return names
 
@@ -160,83 +163,104 @@ def make_plots(q: pd.DataFrame, r: pd.DataFrame, fig_dir):
     fig_dir.mkdir(parents=True, exist_ok=True)
     slots = [s["id"] for s in C.TIME_SLOTS]
 
-    # q1 Google vs provisional OSM length
-    fig, ax = plt.subplots(figsize=(7, 6))
-    ax.scatter(r.osm_m_provisional / 1000, r.google_distance_m / 1000, s=20)
-    mx = max(r.osm_m_provisional.max(), r.google_distance_m.max()) / 1000
-    ax.plot([0, mx], [0, mx], "k:", label="equal")
-    ax.set_xlabel("Provisional OSM shortest path (km)")
-    ax.set_ylabel(f"Google distance, reference query (km)")
-    ax.set_title("q1 — Google vs OSM route length")
-    ax.legend()
-    fig.savefig(fig_dir / "q1_google_vs_osm_length.png", dpi=150, bbox_inches="tight")
-    plt.close(fig)
-
-    # q2 congestion heatmap (median duration / static) by slot × day
-    piv = q.pivot_table(values="congestion_ratio", index="slot_id", columns="day", aggfunc="median")
-    piv = piv.reindex(index=slots, columns=C.V2_DAYS)
-    fig, ax = plt.subplots(figsize=(10, 3.8))
-    sns.heatmap(piv, annot=True, fmt=".2f", cmap="Reds", ax=ax)
-    ax.set_title("q2 — Median congestion ratio (predicted duration / no-traffic duration)")
-    fig.savefig(fig_dir / "q2_congestion_heatmap.png", dpi=150, bbox_inches="tight")
-    plt.close(fig)
-
-    # q3 median duration by slot per band, weekday vs weekend
-    qq = q.merge(r[["route_id", "band_google"]], on="route_id")
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4), sharey=False)
-    for ax, (band, _, _) in zip(axes, C.V2_BANDS):
-        sub = qq[qq.band_google == band]
-        for wkend, lab in ((False, "weekday"), (True, "weekend")):
-            m = sub[sub.is_weekend == wkend].groupby("slot_id").duration_s.median().reindex(slots) / 60
-            ax.plot(slots, m.values, marker="o", label=lab)
-        ax.set_title(f"q3 — {band} (n={sub.route_id.nunique()} routes)")
-        ax.set_ylabel("median predicted duration (min)")
+    try:
+        # q1 Google vs provisional OSM length
+        fig, ax = plt.subplots(figsize=(7, 6))
+        ax.scatter(r.osm_m_provisional / 1000, r.google_distance_m / 1000, s=20)
+        mx = max(r.osm_m_provisional.max(), r.google_distance_m.max()) / 1000
+        ax.plot([0, mx], [0, mx], "k:", label="equal")
+        ax.set_xlabel("Provisional OSM shortest path (km)")
+        ax.set_ylabel(f"Google distance, reference query (km)")
+        ax.set_title("q1 — Google vs OSM route length")
         ax.legend()
-    fig.savefig(fig_dir / "q3_duration_by_slot_band.png", dpi=150, bbox_inches="tight")
-    plt.close(fig)
+        fig.savefig(fig_dir / "q1_google_vs_osm_length.png", dpi=150, bbox_inches="tight")
+        plt.close(fig)
+    except Exception as e:
+        print(f"  plot skipped (q1 Google vs provi...): {e}")
 
-    # q4 tag changes provisional -> Google
-    changes = {"band": (r.band_google != r.band_provisional).sum(),
-               "road type": (r.road_type_google != r.road_type_provisional).sum(),
-               "hotspot exposure": (r.hotspot_exposure_google != r.hotspot_exposure_provisional).sum(),
-               "any (group)": r.group_changed.sum()}
-    fig, axes = plt.subplots(1, 2, figsize=(13, 4.5))
-    axes[0].bar(changes.keys(), changes.values(), color="#e76f51")
-    axes[0].set_title(f"q4a — Routes whose tag changed (of {len(r)})")
-    fill = r.groupby(["band_google", "road_type_google"]).size().unstack(fill_value=0)
-    sns.heatmap(fill, annot=True, fmt="d", cmap="Blues", ax=axes[1])
-    axes[1].set_title("q4b — Routes per band × road type (Google tags)")
-    fig.savefig(fig_dir / "q4_tag_changes.png", dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    try:
+        # q2 congestion heatmap (median duration / static) by slot × day
+        piv = q.pivot_table(values="congestion_ratio", index="slot_id", columns="day", aggfunc="median")
+        piv = piv.reindex(index=slots, columns=C.V2_DAYS)
+        fig, ax = plt.subplots(figsize=(10, 3.8))
+        sns.heatmap(piv, annot=True, fmt=".2f", cmap="Reds", ax=ax)
+        ax.set_title("q2 — Median congestion ratio (predicted duration / no-traffic duration)")
+        fig.savefig(fig_dir / "q2_congestion_heatmap.png", dpi=150, bbox_inches="tight")
+        plt.close(fig)
+    except Exception as e:
+        print(f"  plot skipped (q2 congestion heat...): {e}")
 
-    # q5 endpoint offsets
-    fig, ax = plt.subplots(figsize=(7, 4))
-    ax.hist(np.concatenate([q.start_offset_m.dropna(), q.end_offset_m.dropna()]), bins=40, color="#577590")
-    ax.axvline(C.V2_ENDPOINT_MAX_OFFSET_M, color="red", ls="--", label=f"base limit {C.V2_ENDPOINT_MAX_OFFSET_M} m (large sites: snap + {C.V2_ENDPOINT_EXTRA_M} m)")
-    ax.set_xlabel("distance Google start/end ↔ our landmark coordinate (m)")
-    ax.set_title(f"q5 — Endpoint offsets ({(~q.endpoints_ok).sum()} of {len(q)} queries outside tolerance)")
-    ax.legend()
-    fig.savefig(fig_dir / "q5_endpoint_offsets.png", dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    try:
+        # q3 median duration by slot per band, weekday vs weekend
+        qq = q.merge(r[["route_id", "band_google"]], on="route_id")
+        fig, axes = plt.subplots(1, 3, figsize=(15, 4), sharey=False)
+        for ax, (band, _, _) in zip(axes, C.V2_BANDS):
+            sub = qq[qq.band_google == band]
+            for wkend, lab in ((False, "weekday"), (True, "weekend")):
+                m = sub[sub.is_weekend == wkend].groupby("slot_id").duration_s.median().reindex(slots) / 60
+                ax.plot(slots, m.values, marker="o", label=lab)
+            ax.set_title(f"q3 — {band} (n={sub.route_id.nunique()} routes)")
+            ax.set_ylabel("median predicted duration (min)")
+            ax.legend()
+        fig.savefig(fig_dir / "q3_duration_by_slot_band.png", dpi=150, bbox_inches="tight")
+        plt.close(fig)
+    except Exception as e:
+        print(f"  plot skipped (q3 median duration...): {e}")
 
-    # q6 route-choice stability
-    fig, ax = plt.subplots(figsize=(7, 4))
-    ax.hist(r.n_distinct_paths, bins=range(1, int(r.n_distinct_paths.max()) + 2), align="left", color="#90be6d")
-    ax.set_xlabel("distinct Google paths over the 28 queries")
-    ax.set_ylabel("routes")
-    ax.set_title("q6 — Does Google change its path with time of day?")
-    fig.savefig(fig_dir / "q6_path_stability.png", dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    try:
+        # q4 tag changes provisional -> Google
+        changes = {"band": (r.band_google != r.band_provisional).sum(),
+                   "road type": (r.road_type_google != r.road_type_provisional).sum(),
+                   "hotspot exposure": (r.hotspot_exposure_google != r.hotspot_exposure_provisional).sum(),
+                   "any (group)": r.group_changed.sum()}
+        fig, axes = plt.subplots(1, 2, figsize=(13, 4.5))
+        axes[0].bar(changes.keys(), changes.values(), color="#e76f51")
+        axes[0].set_title(f"q4a — Routes whose tag changed (of {len(r)})")
+        fill = r.groupby(["band_google", "road_type_google"]).size().unstack(fill_value=0)
+        sns.heatmap(fill, annot=True, fmt="d", cmap="Blues", ax=axes[1])
+        axes[1].set_title("q4b — Routes per band × road type (Google tags)")
+        fig.savefig(fig_dir / "q4_tag_changes.png", dpi=150, bbox_inches="tight")
+        plt.close(fig)
+    except Exception as e:
+        print(f"  plot skipped (q4 tag changes pro...): {e}")
 
-    # q7 peak / night ratio
-    fig, ax = plt.subplots(figsize=(8, 4.5))
-    long = r.melt(id_vars="band_google", value_vars=["peak_night_ratio_weekday", "peak_night_ratio_weekend"],
-                  var_name="days", value_name="ratio")
-    sns.boxplot(data=long, x="band_google", y="ratio", hue="days", ax=ax)
-    ax.axhline(1, color="k", ls=":")
-    ax.set_title("q7 — Google peak / night duration ratio (the time-of-day signal the LLM should reproduce)")
-    fig.savefig(fig_dir / "q7_peak_night_ratio.png", dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    try:
+        # q5 endpoint offsets
+        fig, ax = plt.subplots(figsize=(7, 4))
+        ax.hist(np.concatenate([q.start_offset_m.dropna(), q.end_offset_m.dropna()]), bins=40, color="#577590")
+        ax.axvline(C.V2_ENDPOINT_MAX_OFFSET_M, color="red", ls="--", label=f"base limit {C.V2_ENDPOINT_MAX_OFFSET_M} m (large sites: snap + {C.V2_ENDPOINT_EXTRA_M} m)")
+        ax.set_xlabel("distance Google start/end ↔ our landmark coordinate (m)")
+        ax.set_title(f"q5 — Endpoint offsets ({(~q.endpoints_ok).sum()} of {len(q)} queries outside tolerance)")
+        ax.legend()
+        fig.savefig(fig_dir / "q5_endpoint_offsets.png", dpi=150, bbox_inches="tight")
+        plt.close(fig)
+    except Exception as e:
+        print(f"  plot skipped (q5 endpoint offset...): {e}")
+
+    try:
+        # q6 route-choice stability
+        fig, ax = plt.subplots(figsize=(7, 4))
+        ax.hist(r.n_distinct_paths, bins=range(1, int(r.n_distinct_paths.max()) + 2), align="left", color="#90be6d")
+        ax.set_xlabel("distinct Google paths over the 28 queries")
+        ax.set_ylabel("routes")
+        ax.set_title("q6 — Does Google change its path with time of day?")
+        fig.savefig(fig_dir / "q6_path_stability.png", dpi=150, bbox_inches="tight")
+        plt.close(fig)
+    except Exception as e:
+        print(f"  plot skipped (q6 route-choice st...): {e}")
+
+    try:
+        # q7 peak / night ratio
+        fig, ax = plt.subplots(figsize=(8, 4.5))
+        long = r.melt(id_vars="band_google", value_vars=["peak_night_ratio_weekday", "peak_night_ratio_weekend"],
+                      var_name="days", value_name="ratio")
+        sns.boxplot(data=long, x="band_google", y="ratio", hue="days", ax=ax)
+        ax.axhline(1, color="k", ls=":")
+        ax.set_title("q7 — Google peak / night duration ratio (the time-of-day signal the LLM should reproduce)")
+        fig.savefig(fig_dir / "q7_peak_night_ratio.png", dpi=150, bbox_inches="tight")
+        plt.close(fig)
+    except Exception as e:
+        print(f"  plot skipped (q7 peak / night ra...): {e}")
 
 
 # =====================================================================
@@ -270,8 +294,11 @@ def main():
     print(f"Routes whose group changed (provisional -> Google): {int(r.group_changed.sum())} of {len(r)}")
     print(f"Routes where Google used >1 distinct path over 28 queries: {(r.n_distinct_paths > 1).sum()}")
     fig_dir = bd / "figures" / "phase2"
-    make_plots(q, r, fig_dir)
-    print(f"Figures -> {fig_dir}")
+    if len(r) < 5:
+        print(f"Skipping plots: only {len(r)} route(s) processed (need >= 5).")
+    else:
+        make_plots(q, r, fig_dir)
+        print(f"Figures -> {fig_dir}")
 
 
 if __name__ == "__main__":

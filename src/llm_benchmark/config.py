@@ -201,6 +201,7 @@ V2_ENDPOINT_MAX_OFFSET_M = 150                         # Google start/end vs our
 V2_ENDPOINT_EXTRA_M = 100                              # large sites: allowed = max(150, landmark snap_m + 100) (D-29)
 V2_MATCH_STEP_M = 20                                   # map-matching sample spacing
 V2_MATCH_MAX_DIST_M = 25                               # sample farther than this from any OSM edge = unmatched
+V2_MATCH_MIN_RUN = 3                                   # a road name must hold >= 3 consecutive samples (~60 m) to count
 V2_TAG_REFERENCE_QUERY = ("Wednesday", "MID_DAY")      # tie-break only: final tags use the MOST FREQUENT Google path (D-28)
 V2_REFERENCE_MONDAY = "2026-10-05"                     # pinned (D-37). Google run must finish before Mon 05 Oct 07:30 IST;
                                                        # fallback if missed: "2026-10-26" (weeks between are Navaratri/Dasara)
