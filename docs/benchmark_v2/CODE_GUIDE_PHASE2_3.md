@@ -76,15 +76,15 @@ Gemini adapter: `google-genai` SDK, `response_json_schema` enforced, `temperatur
 Adding GPT/Claude later = one adapter function + one entry in `V2_LLM_MODELS`.
 
 ## 5. Phase 3 — `3_query_llm_v2.py`
-**Benchmark prompt (identical to v1 wording, D-13):**
+**Benchmark prompt (v1 wording + clock time, D-13/D-38):**
 ```
 Origin: <origin llm_name>
 Destination: <destination llm_name>
 City: Bangalore, India
 Day of the week: <Monday … Sunday>
-Time of day: <Morning Rush | Off-Peak | Evening Rush | Night>
+Time of day: <Morning Rush (08:00) | Off-Peak (14:00) | Evening Rush (18:00) | Night (23:00)>
 ```
-System prompt = v1 `prompts/system_prompt.txt`; schema = v1 `ROUTE_SCHEMA` (copied verbatim, marked "do not edit").
+System prompt = v1 `prompts/system_prompt.txt`; schema = v1 `ROUTE_SCHEMA` field names/types + one-line descriptions (D-39).
 
 | Subcommand | What it does | Calls |
 |---|---|---|

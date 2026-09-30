@@ -202,7 +202,13 @@ V2_ENDPOINT_EXTRA_M = 100                              # large sites: allowed = 
 V2_MATCH_STEP_M = 20                                   # map-matching sample spacing
 V2_MATCH_MAX_DIST_M = 25                               # sample farther than this from any OSM edge = unmatched
 V2_TAG_REFERENCE_QUERY = ("Wednesday", "MID_DAY")      # tie-break only: final tags use the MOST FREQUENT Google path (D-28)
-V2_REFERENCE_MONDAY = None                             # e.g. "2026-10-05" to force the reference week (avoid holidays); None = next Monday
+V2_REFERENCE_MONDAY = "2026-10-05"                     # pinned (D-37). Google run must finish before Mon 05 Oct 07:30 IST;
+                                                       # fallback if missed: "2026-10-26" (weeks between are Navaratri/Dasara)
+# Calendar notes for the reference week — tagged on every query of that date and reported separately (D-37)
+V2_CALENDAR_NOTES = {
+    "2026-10-10": "Mahalaya Amavasya (Karnataka public holiday)",
+    "2026-10-11": "Navaratri begins / Mysuru Dasara inauguration (festival, not a public holiday)",
+}
 V2_SHUFFLE_SEED = "benchmark-v2"                       # queries are sent in a reproducible shuffled order (D-35)
 
 # --- Phase 3: LLM queries (provider-agnostic, D-12) ---

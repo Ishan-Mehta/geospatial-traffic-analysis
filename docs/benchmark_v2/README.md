@@ -5,6 +5,7 @@ Branch: `benchmark-v2` · v1 snapshot: commit `0df60ba` on `main` · outputs: `d
 ## Read in this order
 | Doc | What it holds (single source of truth for…) |
 |---|---|
+| [IMPORTANT_NOTES.md](IMPORTANT_NOTES.md) | ⚠️ **Read first** — data-use/compliance, what the numbers mean, caveats for the report |
 | [PHASE1_RESULTS.md](PHASE1_RESULTS.md) | **The 72-route list + Phase 1 summary** (for Ishan / professor) |
 | [IO_SPEC.md](IO_SPEC.md) | **Exact prompts, request configs, output formats, and the LLM↔Google comparison row** |
 | [CODE_GUIDE_PHASE2_3.md](CODE_GUIDE_PHASE2_3.md) | **How the Phase 2/3 code works, how it was tested, what to decide** (for review) |
@@ -71,9 +72,11 @@ API usage so far: 1 free Places test call + 72 Places Text Search calls (inside 
 ## Next steps (in order; 🛑 = Ishan decides / approves)
 **🛑 Gate 3 — route list review** (Ishan + professor, using PHASE1_RESULTS.md). Changes → edit seed/decisions, rerun `pairs` (free).
 
-**Decided 2026-10-01:** OPTIMAL routing (D-27), most-frequent-path tags (D-28), thinking A=LOW/B=HIGH (D-26), shuffled order (D-35), gemini-3.8-flash (D-36), endpoint tolerance (D-29).
+**Decided 2026-10-01:** OPTIMAL routing (D-27), most-frequent-path tags (D-28), thinking A=LOW/B=HIGH (D-26), shuffled order (D-35), gemini-3.8-flash (D-36), endpoint tolerance (D-29), reference week 5–11 Oct with holiday tags (D-37), clock time in prompt (D-38), schema descriptions (D-39), no extra field (D-40).
 
-**🛑 Still open:** reference week (D-37, holidays) · professor: prompt/schema tweaks in [IO_SPEC.md](IO_SPEC.md) §6.1 · grounding flag rule (coords AND locality?) · optional gemini-2.5-flash comparison · Batch API (50 % cheaper, ≤ 24 h).
+**⏰ Deadline:** the Google run must finish **before Mon 5 Oct 2026, 07:30 IST** (else week of 26 Oct).
+
+**🛑 Still open:** grounding flag rule (coords AND locality?) · optional gemini-2.5-flash comparison · Batch API (Ishan: maybe tomorrow) · push to GitHub · inform professor of D-38/D-39.
 
 **Phase 2 — Google ground truth** (code ready)
 1. **🛑** `4_query_gmaps_v2.py --limit 1` — one real query, shown to Ishan (≈ $0).
