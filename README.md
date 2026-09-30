@@ -51,6 +51,20 @@ Merges live traffic durations with baseline (static) durations, using OSMnx as a
 ### Stage 5 — QGIS Animation (`src/animation/`)
 Exports selected routes as GeoPackage (`.gpkg`) files with speed-colored traffic segments for temporal animation in QGIS.
 
+### Stage 6 — LLM Route Benchmarking (`src/llm_benchmark/`)
+Benchmarks LLM routing predictions against live Google Maps Routes API data. Tests how accurately LLMs can estimate travel distance, time, and route choice for Bangalore roads using only minimal input (origin, destination, time of day, day of week).
+
+**Scripts (run in order):**
+1. `1_select_benchmark_routes.py` — Stratified selection of test routes by congestion, distance, volatility
+2. `2_reverse_geocode.py` — One-time reverse geocoding of route coordinates to human-readable names
+3. `3_query_llm.py` — Query LLM (Gemini) for route estimates with structured JSON output
+4. `4_query_gmaps.py` — Query Google Maps Routes API for live/future ground truth
+5. `5_compare_results.py` — Compare and compute metrics (distance %, time %, route match score)
+6. `6_visualize_benchmark.py` — Generate benchmark charts and visualizations
+
+**Configuration:** All parameters (route selection counts, time slots, LLM model, etc.) are configurable in `config.py`.
+**Test:** Run `test_pipeline.py` for a single-route end-to-end smoke test.
+
 ## Project Structure
 
 ```
@@ -78,11 +92,16 @@ geospatial-traffic-analysis/
 │   │   └── data_pipeline.py
 │   ├── analysis/                # Stage 4: Statistical analysis
 │   │   └── geospatial_intermediate_analysis.py
-│   └── animation/               # Stage 5: QGIS GeoPackage export
-│       └── animate_selected_routes.py
+│   ├── animation/               # Stage 5: QGIS GeoPackage export
+│   │   └── animate_selected_routes.py
+│   └── llm_benchmark/           # Stage 6: LLM vs Maps Benchmark
+│       ├── config.py
+│       ├── test_pipeline.py
+│       └── ...
 ├── data/
 │   ├── raw/                     # Scraped JSON/CSV data (gitignored)
 │   ├── processed/               # Geocoded road coordinates
+│   ├── benchmark/               # Benchmark inputs/outputs
 │   └── sample_response.json     # Example API response payload
 └── output/                      # Generated results (gitignored)
 ```
@@ -151,6 +170,20 @@ python geospatial_intermediate_analysis.py
 cd src/animation
 python animate_selected_routes.py --list-routes          # See available routes
 python animate_selected_routes.py --routes 1,5,10        # Export selected routes
+```
+
+### 6. Run LLM Benchmark
+```bash
+cd src/llm_benchmark
+python 1_select_benchmark_routes.py   # Select benchmark routes
+python 2_reverse_geocode.py           # One-time: geocode coordinates
+python 3_query_llm.py                 # Query LLM for estimates
+python 4_query_gmaps.py               # Query Google Maps for ground truth
+python 5_compare_results.py           # Compare and compute metrics
+python 6_visualize_benchmark.py       # Generate charts
+
+# Or run a quick test with a single route:
+python test_pipeline.py
 ```
 
 ## Notes
