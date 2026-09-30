@@ -80,7 +80,7 @@ API usage so far: 1 free Places test call + 72 Places Text Search calls (inside 
 
 **🛑 Still open:** professor items ([PROFESSOR_DISCUSSION.md](PROFESSOR_DISCUSSION.md)) · Batch API (Ishan: maybe tomorrow) · no push for now (history contains Google data; repo is public).
 
-**Gemini billing (D-45, pending):** *My First Project* → Set up prepay (≈ ₹1,000) → its key into `.env` → 1 test call. Current `.env` key = Default Gemini Project (free tier).
+**Gemini billing (D-45, pending):** *My First Project* → Set up prepay (≈ ₹700; non-refundable, expires in 1 year, auto-reload OFF; check it doesn't share the Maps billing account) → its key into `.env` → 1 test call. Condition B is code-locked to ≤ 3 test calls without `--approved-by-ishan` (D-46). Current `.env` key = Default Gemini Project (free tier).
 
 **Estimated run time (paid tier, 4 workers for Gemini):** Google ~25–50 min · grounding ~1 min · 3.8-flash A + consistency < 1 h · 2.5-flash A ~20 min · 3.8-flash B ~1.5–4 h.
 

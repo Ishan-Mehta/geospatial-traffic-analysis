@@ -21,9 +21,14 @@ Cost estimates for the project: see the plan's cost table (≈ $8 without condit
 | Default Gemini Project (`gen-lang-client-0190754255`) | 2 (the key currently in `.env`) | **Free tier** | — |
 | My First Project (`project-616e4e16-…`) | 1 | Tier 1 · Postpay | **"Prepay required"** |
 "Prepay required" = Google wants prepaid Gemini credit loaded before this project can make paid calls (appears for some
-newer accounts). **Recommended:** use *My First Project* → **Set up prepay** → load **≈ ₹1,000** first (covers tests,
-grounding, condition A for both models ≈ $6, with margin; GST may be added) → top up ≈ ₹2,000 before condition B.
-Prepaid credit is itself a **hard spending cap**. Then copy that project's key into `.env` as `GEMINI_API_KEY`
+newer accounts). **Recommended:** use *My First Project* → **Set up prepay** → load **≈ ₹700 (~$8)** (covers tests,
+grounding, condition A for both models ≈ $6; GST may be added) → a separate top-up for condition B only if approved.
+
+**Prepay facts** ([official billing page](https://ai.google.dev/gemini-api/docs/billing), checked 2026-10-01):
+non-refundable (the only stated exception is switching to Postpay, which the same page says is not supported);
+credits expire after 1 year; minimum purchase $5; at $0 balance **all API keys on that billing account stop** → keep
+**auto-reload OFF** so the balance acts as a hard stop. ⚠️ Check (Billing → My projects) whether the Maps project shares
+this billing account; if unsure, finish the Google run before switching on prepay. Then copy that project's key into `.env` as `GEMINI_API_KEY`
 (Ishan does this; keys are never pasted in chat) → Claude verifies with 1 test call.
 Optional second net: budget alert ≈ ₹3,000 on the billing account.
 

@@ -341,6 +341,8 @@ def main():
         if name == "benchmark":
             p.add_argument("--condition", choices=["A", "B"], required=True)
             p.add_argument("--part", choices=["main", "consistency", "all"], default="main")
+            p.add_argument("--approved-by-ishan", action="store_true",
+                           help="required for condition B runs of more than 3 calls (D-46)")
     sub.add_parser("grounding-eval")
     sub.add_parser("status")
     args = ap.parse_args()
@@ -362,7 +364,11 @@ def main():
             d / f"{model_key}_grounding.jsonl", args.dry_run, args.limit, args.mock, args.workers)
     else:
         if args.condition == "B" and not args.dry_run and not args.mock:
-            print("NOTE: condition B (thinking on) is the costliest step and needs Ishan's explicit approval (D-09).")
+            # Guard (D-46): only single test calls without explicit approval
+            if not args.approved_by_ishan and (args.limit is None or args.limit > 3):
+                sys.exit("Condition B is limited to test calls (--limit 1..3) unless run with --approved-by-ishan "
+                         "(Ishan's explicit approval required, D-09/D-46).")
+            print("NOTE: condition B (high thinking) — costliest step.")
         system_prompt = C.SYSTEM_PROMPT_FILE.read_text(encoding="utf-8").strip()
         run("benchmark", benchmark_items(args.part, args.condition), model_key, args.condition, system_prompt,
             ROUTE_SCHEMA, d / f"{model_key}_{args.condition}.jsonl", args.dry_run, args.limit, args.mock,
