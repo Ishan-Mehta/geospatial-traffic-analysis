@@ -68,7 +68,7 @@ hotspot_share_google, n_routes, …` — full list in [DATA_DICTIONARY.md](DATA_
 
 ---
 ## 4. LLM — request
-**Model:** `gemini-3.8-flash` via the `google-genai` SDK, one independent `generate_content` call per query
+**Models:** `gemini-3.8-flash` (main) and `gemini-2.5-flash` (comparison, D-42) via the `google-genai` SDK, one independent `generate_content` call per query
 (stateless: no chat history, no stored session — every call starts from a clean slate).
 
 **System instruction** (`prompts/system_prompt.txt`, v1, unchanged):
@@ -94,8 +94,8 @@ Time of day: Evening Rush (18:00)
 response_mime_type   = "application/json"
 response_json_schema = ROUTE_SCHEMA (below)          # the API enforces this structure
 temperature          = 1.0
-thinking_config      = ThinkingConfig(thinking_level="LOW")    # condition A
-                       ThinkingConfig(thinking_level="HIGH")   # condition B (last, separate approval)
+thinking_config      = gemini-3.8-flash: ThinkingConfig(thinking_level="LOW")  (A) | ThinkingConfig(thinking_level="HIGH") (B, last)
+                       gemini-2.5-flash: ThinkingConfig(thinking_budget=0)     (A) | ThinkingConfig(thinking_budget=-1)    (B, optional)
 ```
 **ROUTE_SCHEMA** (v1 field names, types and enum + one-line descriptions, D-39):
 ```json
@@ -168,6 +168,6 @@ training). Queries are sent in a reproducible shuffled order (D-35) so any drift
 update — detectable via `model_version`) spreads evenly across routes and groups.
 
 ### 6.3 Reference week for Google
-Pinned to **Mon 5 – Sun 11 Oct 2026** (D-37). Sat 10 Oct = Mahalaya Amavasya (public holiday), Sun 11 Oct = Navaratri
-begins; both are tagged via `calendar_note` and weekend results are reported with and without them. All Google queries
+Pinned to **Mon 5 – Sun 11 Oct 2026** (D-37). Sat 10 Oct = Mahalaya Amavasya (public holiday), tagged via
+`calendar_note`, Saturday reported with and without it. Sun 11 Oct (Navaratri begins) is not tagged (normal weekend day). All Google queries
 must be sent before **Mon 5 Oct 07:30 IST**; otherwise the week moves to Mon 26 Oct (`V2_REFERENCE_MONDAY` in config).

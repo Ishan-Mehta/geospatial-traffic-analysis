@@ -30,7 +30,7 @@ import pandas as pd
 
 import config as C
 from llm_clients import call_llm
-from v2_common import append_jsonl, haversine_m, read_jsonl, sha1_short, stable_hash
+from v2_common import _tokens, append_jsonl, haversine_m, read_jsonl, sha1_short, stable_hash
 
 IST = ZoneInfo("Asia/Kolkata")
 
@@ -256,10 +256,18 @@ def cmd_grounding_eval(args, model_key):
         p = r["parsed_response"]
         g = lm.loc[r["landmark_id"]]
         dist = float(haversine_m(g.lat, g.lng, p["latitude"], p["longitude"]))
+        far = dist > C.V2_GROUNDING_MAX_M
+        # locality matches if Google's address shares a meaningful word with the LLM's locality answer
+        loc_tokens = set(_tokens(p["locality"])) - {"road", "main", "cross", "nagar", "layout", "area"}
+        addr_tokens = set(_tokens(g.formatted_address)) | set(_tokens(g.expected_area))
+        loc_match = bool(loc_tokens & addr_tokens)
+        misplaced = far and (not loc_match if C.V2_GROUNDING_RULE == "coords_and_locality" else True)
         rows.append({"landmark_id": r["landmark_id"], "llm_name": r["llm_name"], "google_lat": g.lat,
-                     "google_lng": g.lng, "llm_lat": p["latitude"], "llm_lng": p["longitude"],
+                     "google_lng": g.lng, "google_address": g.formatted_address,
+                     "llm_lat": p["latitude"], "llm_lng": p["longitude"],
                      "llm_locality": p["locality"], "llm_confidence": p["confidence"],
-                     "error_m": round(dist), "misplaced": dist > C.V2_GROUNDING_MAX_M})
+                     "error_m": round(dist), "far": far, "locality_match": loc_match,
+                     "rule": C.V2_GROUNDING_RULE, "misplaced": misplaced})
     res = pd.DataFrame(rows).sort_values("error_m", ascending=False)
     res.to_csv(d / f"{model_key}_grounding_results.csv", index=False)
     od = pd.read_csv(C.V2_OD_PAIRS_CSV)
@@ -269,7 +277,8 @@ def cmd_grounding_eval(args, model_key):
     od[["route_id", "origin_id", "dest_id", "origin_misplaced", "dest_misplaced", "grounding_flag"]].to_csv(
         d / f"{model_key}_grounding_route_flags.csv", index=False)
     print(f"Landmarks evaluated: {len(res)} | median error {res.error_m.median():.0f} m | "
-          f"misplaced (> {C.V2_GROUNDING_MAX_M / 1000:.0f} km): {len(bad)}")
+          f"far (> {C.V2_GROUNDING_MAX_M / 1000:.0f} km): {int(res.far.sum())} | locality matches: "
+          f"{int(res.locality_match.sum())} | misplaced (rule {C.V2_GROUNDING_RULE}): {len(bad)}")
     print(f"Routes with a misplaced endpoint: {int(od.grounding_flag.sum())} of {len(od)}")
     print(res.head(10)[["landmark_id", "llm_name", "llm_locality", "error_m", "misplaced"]].to_string(index=False))
 
