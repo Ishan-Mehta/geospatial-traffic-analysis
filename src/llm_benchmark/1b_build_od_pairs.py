@@ -22,12 +22,9 @@ Definitions and thresholds: docs/benchmark_v2/METHODOLOGY.md, values in config.p
 """
 
 import argparse
-import difflib
 import hashlib
 import json
 import math
-import os
-import re
 import sys
 import time
 from pathlib import Path
@@ -37,134 +34,8 @@ import pandas as pd
 
 import config as C
 
-LAT_LNG_CRS = "EPSG:4326"
-
-
-# =====================================================================
-#  Small helpers
-# =====================================================================
-def haversine_m(lat1, lng1, lat2, lng2):
-    """Great-circle distance in metres (works on scalars or numpy arrays)."""
-    r = 6371000.0
-    p1, p2 = np.radians(lat1), np.radians(lat2)
-    dp = p2 - p1
-    dl = np.radians(np.asarray(lng2) - np.asarray(lng1))
-    a = np.sin(dp / 2) ** 2 + np.cos(p1) * np.cos(p2) * np.sin(dl / 2) ** 2
-    return 2 * r * np.arcsin(np.sqrt(a))
-
-
-_STOP_TOKENS = {"bengaluru", "bangalore", "karnataka", "india", "the"}
-
-
-def _tokens(s: str) -> list:
-    s = re.sub(r"[^a-z0-9 ]+", " ", str(s).lower())
-    return [t for t in s.split() if t and t not in _STOP_TOKENS]
-
-
-def token_set_ratio(a: str, b: str) -> float:
-    """0-100 similarity that ignores word order and extra words (fuzzywuzzy-style)."""
-    ta, tb = set(_tokens(a)), set(_tokens(b))
-    if not ta or not tb:
-        return 0.0
-    inter = " ".join(sorted(ta & tb))
-    s_a = (inter + " " + " ".join(sorted(ta - tb))).strip()
-    s_b = (inter + " " + " ".join(sorted(tb - ta))).strip()
-    ratio = lambda x, y: difflib.SequenceMatcher(None, x, y).ratio() if x and y else 0.0
-    return 100.0 * max(ratio(inter, s_a), ratio(inter, s_b), ratio(s_a, s_b))
-
-
-def stable_hash(*parts) -> int:
-    """Deterministic integer hash (Python's hash() is salted per process)."""
-    return int(hashlib.md5("|".join(map(str, parts)).encode()).hexdigest()[:12], 16)
-
-
-def load_env_key(name: str) -> str:
-    from dotenv import load_dotenv
-    load_dotenv(C._PROJECT_ROOT / ".env")
-    key = os.getenv(name)
-    if not key:
-        sys.exit(f"Error: {name} not found in .env (see docs/benchmark_v2/BILLING_AND_KEYS.md)")
-    return key
-
-
-def friendly_api_error(status: int, text: str) -> str:
-    """Translate an API error into the row of BILLING_AND_KEYS.md §C. Never includes the key."""
-    t = text.lower()
-    if "billing" in t:
-        return "Billing not enabled for this project -> BILLING_AND_KEYS.md A2/B2"
-    if "has not been used" in t or "is disabled" in t or "service_disabled" in t:
-        return "API not enabled in this project -> BILLING_AND_KEYS.md B1"
-    if "not authorized" in t or "request_denied" in t:
-        return "API key restriction blocks this API -> BILLING_AND_KEYS.md B3"
-    if "api_key_invalid" in t or "api key not valid" in t:
-        return "API key invalid -> re-copy key into .env"
-    if status == 429 or "resource_exhausted" in t:
-        return "Quota / rate limit reached -> wait or raise quota (BILLING_AND_KEYS.md A4/B4)"
-    return f"HTTP {status}: {text[:300]}"
-
-
-# =====================================================================
-#  OSM graph helpers (projected to UTM for metric distances)
-# =====================================================================
-class OsmNetwork:
-    """Loads the local drive graph once; nearest-node / nearest-edge queries in metres."""
-
-    def __init__(self):
-        import osmnx as ox
-        from pyproj import Transformer
-        from shapely import STRtree
-        from shapely.geometry import LineString, Point
-
-        print(f"Loading OSM graph {C.OSM_GRAPH_PATH.name} (~40 s)...")
-        t0 = time.time()
-        self.G = ox.load_graphml(C.OSM_GRAPH_PATH)
-        self.to_utm = Transformer.from_crs(LAT_LNG_CRS, C.UTM_CRS, always_xy=True)
-        self.to_ll = Transformer.from_crs(C.UTM_CRS, LAT_LNG_CRS, always_xy=True)
-
-        # Snap only to the largest strongly connected component, otherwise a landmark can
-        # land on an isolated fragment (e.g. a one-way stub) from which nothing is reachable.
-        import networkx as nx
-        nodes = list(max(nx.strongly_connected_components(self.G), key=len))
-        xs = np.array([self.G.nodes[n]["x"] for n in nodes])
-        ys = np.array([self.G.nodes[n]["y"] for n in nodes])
-        ux, uy = self.to_utm.transform(xs, ys)
-        self.node_ids = np.array(nodes)
-        self.node_xy = {n: (x, y) for n, x, y in zip(nodes, ux, uy)}
-        # all nodes (incl. small components) are still needed to draw path geometries
-        for n, d in self.G.nodes(data=True):
-            if n not in self.node_xy:
-                self.node_xy[n] = self.to_utm.transform(d["x"], d["y"])
-        self.node_tree = STRtree([Point(x, y) for x, y in zip(ux, uy)])
-        self._edge_tree = None
-        self._Point, self._LineString, self._STRtree = Point, LineString, STRtree
-        print(f"  {self.G.number_of_nodes():,} nodes ({len(nodes):,} in largest strongly connected "
-              f"component, used for snapping), {self.G.number_of_edges():,} edges in {time.time() - t0:.0f}s")
-
-    def utm(self, lat, lng):
-        return self.to_utm.transform(lng, lat)
-
-    def nearest_node(self, lat, lng):
-        x, y = self.utm(lat, lng)
-        idx = self.node_tree.query_nearest(self._Point(x, y))[0]
-        n = self.node_ids[idx]
-        nx_, ny_ = self.node_xy[n]
-        return n, math.hypot(x - nx_, y - ny_)
-
-    def nearest_edge_dist(self, lat, lng):
-        """Distance (m) from a point to the nearest drivable edge."""
-        if self._edge_tree is None:
-            lines = [self._LineString([self.node_xy[u], self.node_xy[v]])
-                     for u, v in self.G.edges() if u != v]
-            self._edge_lines = lines
-            self._edge_tree = self._STRtree(lines)
-        p = self._Point(*self.utm(lat, lng))
-        idx = self._edge_tree.query_nearest(p)[0]
-        return p.distance(self._edge_lines[idx])
-
-    def best_edge(self, u, v):
-        """Shortest parallel edge data between u and v."""
-        data = self.G.get_edge_data(u, v)
-        return min(data.values(), key=lambda d: float(d.get("length", 0)))
+from v2_common import (LAT_LNG_CRS, OsmNetwork, band_of, basemap as _basemap, friendly_api_error,
+                       haversine_m, load_env_key, road_type_of, stable_hash, token_set_ratio)
 
 
 # =====================================================================
@@ -472,21 +343,6 @@ def describe_path(net: OsmNetwork, path: list, hotspot_union):
     return total, (arterial / total if total else 0.0), names, overlap, line
 
 
-def band_of(length_m: float):
-    for name, lo, hi in C.V2_BANDS:
-        if lo <= length_m < hi:
-            return name
-    return None
-
-
-def road_type_of(share: float) -> str:
-    if share >= C.V2_ARTERIAL_MIN_SHARE:
-        return "arterial"
-    if share <= C.V2_SUBARTERIAL_MAX_SHARE:
-        return "sub_arterial"
-    return "mixed"
-
-
 def select_routes(cand: pd.DataFrame, lm: pd.DataFrame) -> pd.DataFrame:
     """Round-robin balanced selection over the 18 groups (METHODOLOGY §4)."""
     pos = lm.set_index("landmark_id")[["lat", "lng"]]
@@ -637,21 +493,6 @@ def print_group_table(cand, sel):
 # =====================================================================
 #  Plots (Phase 1) — numbering matches the plan / METHODOLOGY
 # =====================================================================
-def _basemap(ax, net):
-    """Light grey primary/secondary road network as background."""
-    xs, ys = [], []
-    for u, v, d in net.G.edges(data=True):
-        hw = d.get("highway")
-        hw = hw[0] if isinstance(hw, list) else hw
-        if hw in ("motorway", "trunk", "primary", "secondary"):
-            xs += [net.G.nodes[u]["x"], net.G.nodes[v]["x"], None]
-            ys += [net.G.nodes[u]["y"], net.G.nodes[v]["y"], None]
-    ax.plot(xs, ys, color="#cfcfcf", lw=0.4, zorder=0)
-    ax.set_aspect(1 / math.cos(math.radians(12.97)))
-    ax.set_xlabel("Longitude")
-    ax.set_ylabel("Latitude")
-
-
 def plot_landmarks(lm, fig_dir, net, title_suffix=""):
     import matplotlib.pyplot as plt
     fig_dir.mkdir(parents=True, exist_ok=True)

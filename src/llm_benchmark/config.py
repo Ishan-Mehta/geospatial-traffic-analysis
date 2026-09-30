@@ -170,3 +170,67 @@ V2_TARGET_ROUTES = 72
 V2_MAX_PER_GROUP = 6
 V2_MAX_LANDMARK_USES = 3
 V2_NEAR_DUP_M = 1500
+
+# --- Queries: 7 days × 4 slots = 28 per route (D-07). Slot ids/labels/times reuse TIME_SLOTS above.
+V2_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+V2_WEEKEND_DAYS = {"Saturday", "Sunday"}
+V2_MOCK_DIR = V2_DIR / "mock"               # --mock outputs (offline pipeline tests), never results
+
+# --- Phase 2: Google ground truth (predicted traffic, D-08) ---
+V2_GMAPS_DIR = V2_DIR / "gmaps"
+V2_GMAPS_RESPONSES_JSONL = "gmaps_responses.jsonl"     # file names; directory = V2_GMAPS_DIR or mock
+V2_GMAPS_MANIFEST = "run_manifest.json"
+V2_GMAPS_QUERIES_CSV = "gmaps_queries.csv"             # 4b output: one row per query
+V2_GMAPS_ROUTES_CSV = "gmaps_routes.csv"               # 4b output: one row per route (final tags)
+# TRAFFIC_AWARE and TRAFFIC_AWARE_OPTIMAL are both the Pro SKU; OPTIMAL = most accurate
+# traffic-aware estimate (no latency shortcuts). Traffic-on-polyline is NOT requested
+# (it would trigger the Enterprise SKU). See D-27.
+V2_ROUTING_PREFERENCE = "TRAFFIC_AWARE_OPTIMAL"
+V2_TRAFFIC_MODEL = "BEST_GUESS"                        # only sent with TRAFFIC_AWARE_OPTIMAL
+V2_COMPUTE_ALTERNATIVES = True                         # store up to 3 Google routes; primary = routes[0]
+V2_GMAPS_FIELD_MASK = (
+    "routes.duration,routes.staticDuration,routes.distanceMeters,routes.description,"
+    "routes.routeLabels,routes.polyline.geoJsonLinestring,"
+    "routes.legs.startLocation,routes.legs.endLocation,"
+    "routes.legs.steps.distanceMeters,routes.legs.steps.navigationInstruction"
+)
+V2_ROUTES_PRICE_PER_CALL = 0.010                       # Pro SKU list price; 5,000 free / month
+V2_ROUTES_FREE_PER_MONTH = 5000
+V2_MIN_LEAD_MINUTES = 30                               # every departureTime must be >= this far in the future
+V2_ENDPOINT_MAX_OFFSET_M = 150                         # Google start/end vs our coordinate (METHODOLOGY §2)
+V2_ENDPOINT_EXTRA_M = 100                              # large sites: allowed = max(150, landmark snap_m + 100) (D-29)
+V2_MATCH_STEP_M = 20                                   # map-matching sample spacing
+V2_MATCH_MAX_DIST_M = 25                               # sample farther than this from any OSM edge = unmatched
+V2_TAG_REFERENCE_QUERY = ("Wednesday", "MID_DAY")      # whose Google route defines final route tags (D-28, to confirm)
+
+# --- Phase 3: LLM queries (provider-agnostic, D-12) ---
+V2_LLM_DIR = V2_DIR / "llm"
+V2_GROUNDING_SYSTEM_PROMPT_FILE = _CONFIG_DIR / "prompts" / "grounding_system_prompt.txt"
+V2_CONSISTENCY_ROUTES_CSV = V2_DIR / "consistency_routes.csv"
+V2_CONSISTENCY_N_ROUTES = 10
+V2_CONSISTENCY_EXTRA_SAMPLES = 2                       # sample_idx 1 and 2 (condition A only)
+V2_ACTIVE_LLM = "gemini_35_flash"
+# Each model: provider adapter in llm_clients.py, per-condition generation settings, prices (USD / 1M tokens)
+# Gemini 3.x cannot fully disable thinking: condition A uses the lowest level (MINIMAL) and every
+# record logs the thought-token count (D-26).
+V2_LLM_MODELS = {
+    "gemini_35_flash": {
+        "provider": "gemini", "model_name": "gemini-3.5-flash", "api_key_env": "GEMINI_API_KEY",
+        "temperature": 1.0,
+        "conditions": {"A": {"thinking_level": "MINIMAL"}, "B": {"thinking_level": "HIGH"}},
+        "price_in_per_m": 1.50, "price_out_per_m": 9.00,
+        "est_tokens": {"A": (220, 350), "B": (220, 2500)},   # (input, output incl. thinking) per call
+        "min_interval_s": 0.5,                               # pause between calls
+    },
+    # Example for later (adapter stubs exist in llm_clients.py):
+    # "gpt_x": {"provider": "openai", "model_name": "...", "api_key_env": "OPENAI_API_KEY", ...},
+    # "claude_x": {"provider": "anthropic", "model_name": "...", "api_key_env": "ANTHROPIC_API_KEY", ...},
+    "mock": {   # offline test double: deterministic fake answers, optional injected failures
+        "provider": "mock", "model_name": "mock-llm", "api_key_env": None, "temperature": 1.0,
+        "conditions": {"A": {}, "B": {}}, "price_in_per_m": 0.0, "price_out_per_m": 0.0,
+        "est_tokens": {"A": (220, 350), "B": (220, 2500)}, "min_interval_s": 0.0,
+        "fail_rate": 0.05,
+    },
+}
+V2_LLM_MAX_ATTEMPTS = 5
+V2_GROUNDING_MAX_M = 2000                              # LLM places a landmark > 2 km from Google's point -> misplaced

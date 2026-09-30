@@ -17,3 +17,10 @@ Format: date · command · API calls (paid?) · outputs · observations.
 | R-10 | 2026-10-01 | `geocode --evaluate-only` | 0 | `landmarks_geocoded.csv`, `landmarks_review.csv`, p1, p2 | 47 OK · 19 APPROVED · 4 DROPPED · 0 unresolved → 66 usable |
 | R-11 | 2026-10-01 | `pairs --source geocoded` | 0 | `candidate_pairs.csv`, `od_pairs.csv` (md5 cbb2e135…), `od_pairs.geojson`, figures p1, p4–p8 | 2,059 candidates → 2,019 eligible (30 outside bands, 10 short non-compact). Band medians of hotspot share 0.506 / 0.533 / 0.604. **72 routes, 18 groups × 4.** 64/66 landmarks used; 1 route < 2 km; median detour 1.22 |
 | R-12 | 2026-10-01 | Wrote `PHASE1_RESULTS.md` (summary + full route table) | 0 | docs | For Gate 3 |
+| R-13 | 2026-10-01 | Refactor: helpers → `v2_common.py`; `1b… pairs --source geocoded` rerun | 0 | `od_pairs.csv` | md5 unchanged `cbb2e135…` (refactor is behaviour-neutral) |
+| R-14 | 2026-10-01 | `4_query_gmaps_v2.py --dry-run` | 0 | — | 2,016 queries; reference week would be Mon 2026-10-05 if run now; list price $20.16, expected $0 |
+| R-15 | 2026-10-01 | `4_query_gmaps_v2.py --mock --limit 5`, then `--mock` | 0 (mock) | `mock/gmaps/` | Resume verified (5 + 2,011) |
+| R-16 | 2026-10-01 | `4b_process_gmaps_v2.py --mock` (twice) | 0 | `mock/gmaps/*.csv`, `mock/figures/phase2/` | 1st: 18 % endpoint offsets > 150 m, all large sites → tolerance rule D-29; 2nd: 100 % within tolerance |
+| R-17 | 2026-10-01 | `3_query_llm_v2.py select-consistency` | 0 | `consistency_routes.csv` | 1st pick lopsided → balanced greedy (D-31): bands 4/3/3, types 4/3/3, exposure 5/5 |
+| R-18 | 2026-10-01 | `3_query_llm_v2.py` dry-runs (grounding, A --part all, B) | 0 | — | 64 calls ≈ $0.22 · 2,576 ≈ $9 · 2,016 ≈ $46 |
+| R-19 | 2026-10-01 | Mock LLM runs (grounding, A all, B limit 10), fake-SDK and fake-HTTP error tests, fatal-stop test | 0 | `mock/llm/` | All error kinds classified correctly; resume and fatal stop verified; mock RNG bug (ms-clock seed) fixed |
