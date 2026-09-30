@@ -87,6 +87,7 @@ def process_queries(recs: dict, od: pd.DataFrame, net: OsmNetwork, hot_union) ->
         rows.append({
             "route_id": rid, "day": day, "slot_id": slot, "is_weekend": day in C.V2_WEEKEND_DAYS,
             "departure_ist": rec["departure_ist"],
+            "calendar_note": C.V2_CALENDAR_NOTES.get(rec["departure_ist"][:10], ""),
             "distance_m": rt["distance_m"], "duration_s": rt["duration_s"], "static_duration_s": rt["static_duration_s"],
             "congestion_ratio": rt["duration_s"] / rt["static_duration_s"] if rt["static_duration_s"] else np.nan,
             "description": rt["description"], "n_routes": rec.get("n_routes", 1),

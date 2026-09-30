@@ -3,7 +3,7 @@
 Single source of truth for **what is sent** and **what comes back**, for both systems, and for the
 **comparison row** that joins them. Values below are generated from the code (`4_query_gmaps_v2.py`,
 `3_query_llm_v2.py`, `llm_clients.py`, `config.py`) — example route **R046, Wednesday, PM_PEAK**.
-Status: approved choices as of 2026-10-01 (D-26…D-37); items marked **[open]** await a decision.
+Status: approved choices as of 2026-10-01 (D-26…D-40). Compliance notes: [IMPORTANT_NOTES.md](IMPORTANT_NOTES.md).
 
 ---
 ## 1. What is held identical on both sides
@@ -11,7 +11,7 @@ Status: approved choices as of 2026-10-01 (D-26…D-37); items marked **[open]**
 |---|---|---|
 | Origin / destination | Google coordinate of the landmark (`od_pairs.csv` `origin_lat/lng`, `dest_lat/lng`) | the same landmark's `llm_name` |
 | Day | slot's weekday inside the fixed reference week | weekday name (Monday … Sunday) |
-| Time | exact clock time 08:00 / 14:00 / 18:00 / 23:00 IST | label: Morning Rush / Off-Peak / Evening Rush / Night **[open: see §6.1]** |
+| Time | exact clock time 08:00 / 14:00 / 18:00 / 23:00 IST | label + the same clock time: Morning Rush (08:00) / Off-Peak (14:00) / Evening Rush (18:00) / Night (23:00) (D-38) |
 | Via points | none | none |
 | Mode | car (`DRIVE`) | "car travel" (system prompt) |
 | Traffic | predicted typical traffic for that departure | the model's own knowledge |
@@ -40,7 +40,7 @@ X-Goog-FieldMask: routes.duration,routes.staticDuration,routes.distanceMeters,ro
   "trafficModel": "BEST_GUESS"
 }
 ```
-(The date shown is from the default week; the real week is fixed at the first real call — see §6.3.)
+(Reference week pinned to Mon 5 – Sun 11 Oct 2026, D-37 — see §6.3.)
 Billing SKU: **Compute Routes Pro** (triggered by TRAFFIC_AWARE_OPTIMAL). No traffic-on-polyline → not Enterprise.
 
 ## 3. Google Routes — output
@@ -81,13 +81,13 @@ IMPORTANT CONSTRAINTS:
 - You MUST provide numeric estimates even if uncertain. Do not refuse or say you cannot determine this.
 - Consider the time of day and day of week when estimating travel time — Bangalore has heavy peak-hour traffic.
 ```
-**User message** (v1 template; R046 Wednesday PM_PEAK):
+**User message** (v1 template + clock time, D-38; R046 Wednesday PM_PEAK):
 ```
 Origin: Rajajinagar Metro Station
 Destination: RV College of Engineering
 City: Bangalore, India
 Day of the week: Wednesday
-Time of day: Evening Rush
+Time of day: Evening Rush (18:00)
 ```
 **Generation config:**
 ```
@@ -97,16 +97,18 @@ temperature          = 1.0
 thinking_config      = ThinkingConfig(thinking_level="LOW")    # condition A
                        ThinkingConfig(thinking_level="HIGH")   # condition B (last, separate approval)
 ```
-**ROUTE_SCHEMA** (v1, unchanged):
+**ROUTE_SCHEMA** (v1 field names, types and enum + one-line descriptions, D-39):
 ```json
 {"type": "OBJECT",
  "required": ["suggested_route", "estimated_distance_km", "estimated_time_minutes", "traffic_awareness", "reasoning"],
  "properties": {
-   "suggested_route":        {"type": "ARRAY", "items": {"type": "STRING"}},
-   "estimated_distance_km":  {"type": "NUMBER"},
-   "estimated_time_minutes": {"type": "NUMBER"},
-   "traffic_awareness":      {"type": "STRING", "enum": ["none", "light", "moderate", "heavy"]},
-   "reasoning":              {"type": "STRING"}}}
+   "suggested_route":        {"type": "ARRAY", "items": {"type": "STRING"},
+                              "description": "Ordered list of the road names you would drive on, from origin to destination (e.g. 'Hosur Road', 'Outer Ring Road'). Road names only."},
+   "estimated_distance_km":  {"type": "NUMBER", "description": "Estimated driving distance in kilometres."},
+   "estimated_time_minutes": {"type": "NUMBER", "description": "Estimated driving time in minutes at the given day and time of day, including expected traffic."},
+   "traffic_awareness":      {"type": "STRING", "enum": ["none", "light", "moderate", "heavy"],
+                              "description": "Expected traffic level along the route at that day and time."},
+   "reasoning":              {"type": "STRING", "description": "Brief explanation of the route choice and the time estimate."}}}
 ```
 **Grounding check** (separate, once per landmark; not part of benchmark prompts):
 system = `prompts/grounding_system_prompt.txt`; user:
@@ -150,28 +152,22 @@ Rows carry the final tags (band, road type, hotspot exposure), `valid_numbers`, 
 Road names are normalised before matching (lower-case, "Rd"→"Road", "Main Rd"→"Main Road", punctuation removed,
 alias list e.g. "ORR" = "Outer Ring Road") — list finalised in Phase 4 and documented in METHODOLOGY.
 
-### 6.1 Parseability — what is solid, what could be better
-- **Solid:** the API enforces the JSON schema, so every answer has the same 5 fields; distance and time are numbers
-  with fixed units in the field names (km, minutes); traffic is one of 4 fixed labels. No free-text parsing needed
-  for the numeric metrics. Invalid values (≤ 0) are flagged via `valid_numbers`.
-- **Weak spot 1 — road names are free text.** "suggested_route" is not defined in the schema, so the model may mix
-  roads with landmarks ("Majestic"), abbreviations ("ORR") or phrases ("via flyover"). Handled by normalisation +
-  fuzzy matching, but it adds noise. **[open]** A schema *description* per field (e.g. "ordered list of road
-  names driven, e.g. 'Hosur Road'") would fix this without renaming fields — but it changes the professor-approved
-  schema, so it needs the professor's OK.
-- **Weak spot 2 — time label vs clock time.** The LLM is told "Evening Rush"; Google is asked for 18:00 exactly.
-  The model may picture 17:00 or 19:30, which blurs the time comparison. **[open]** Option: "Time of day: Evening
-  Rush (18:00)" — also a prompt change needing the professor's OK.
-- **Optional extra field [open, professor]:** `estimated_free_flow_time_minutes` would let us compare against Google's
-  `staticDuration` and separate "knows the distance/speed" from "knows the traffic".
-If none of these are approved, the benchmark runs with the v1 prompt and schema exactly as shown above.
+### 6.1 Parseability
+- The API enforces the JSON schema, so every answer has the same 5 fields; distance and time are numbers with fixed
+  units (km, minutes); traffic is one of 4 fixed labels. No free-text parsing is needed for the numeric metrics.
+  Invalid values (≤ 0) are flagged via `valid_numbers`.
+- Road names: the schema description asks for an ordered list of road names only (D-39); normalisation + fuzzy
+  matching handles remaining abbreviations ("ORR") and spelling variants.
+- Time semantics: the prompt carries the exact clock time (D-38) and the schema says "including expected traffic",
+  so `estimated_time_minutes` is compared with Google's `duration` (predicted traffic) for the same departure time.
+- Not added (D-40): a separate free-flow-time field — possible later ablation.
 
 ### 6.2 LLM statelessness and order
 Each call is independent (no history, no session, no caching of answers; paid-tier prompts are not used for
 training). Queries are sent in a reproducible shuffled order (D-35) so any drift during the run (e.g. a silent model
 update — detectable via `model_version`) spreads evenly across routes and groups.
 
-### 6.3 Reference week for Google **[open]**
-Google predicts traffic for the specific calendar week in the request. Karnataka 2026 holidays around the default
-week: Mahalaya Amavasya Sat 10 Oct; Navaratri/Dasara 11–21 Oct (public holidays 20–21 Oct). The week is set with
-`V2_REFERENCE_MONDAY` in `config.py` and must be a normal working week; the Google run must happen before it starts.
+### 6.3 Reference week for Google
+Pinned to **Mon 5 – Sun 11 Oct 2026** (D-37). Sat 10 Oct = Mahalaya Amavasya (public holiday), Sun 11 Oct = Navaratri
+begins; both are tagged via `calendar_note` and weekend results are reported with and without them. All Google queries
+must be sent before **Mon 5 Oct 07:30 IST**; otherwise the week moves to Mon 26 Oct (`V2_REFERENCE_MONDAY` in config).

@@ -53,7 +53,7 @@ Decisions and their reasons are in [DECISIONS.md](DECISIONS.md).
 ## 5. Phase 2 — Google ground truth
 - **Query**: Google Routes `computeRoutes`, origin/destination = landmark Google coordinates, no via points,
   `TRAFFIC_AWARE_OPTIMAL` + `trafficModel BEST_GUESS`, future `departureTime` = slot time on that weekday of one fixed
-  **reference week** (next week's Monday at first run; stored in `gmaps/run_manifest.json`). Semantics: **predicted typical
+  **reference week** (pinned Mon 5 – Sun 11 Oct 2026, D-37; stored in `gmaps/run_manifest.json`; `calendar_note` tags Sat 10 Oct holiday and Sun 11 Oct Navaratri). Semantics: **predicted typical
   traffic**, not live. Up to 3 routes returned; the **primary route = routes[0]** is the ground truth; alternatives are stored.
 - **Congestion ratio** = duration / staticDuration of the primary route (≥ 1 means slower than free-flow).
 - **Endpoint check**: distance between Google's leg start/end and our coordinate ≤ max(150 m, landmark `snap_m` + 100 m) (D-29).
@@ -66,7 +66,7 @@ Decisions and their reasons are in [DECISIONS.md](DECISIONS.md).
 - **Peak/night ratio** (Google): mean duration of AM_PEAK+PM_PEAK ÷ NIGHT duration, weekdays and weekends separately.
 
 ## 6. Phase 3 — LLM queries
-- **Benchmark prompt**: v1 wording and schema (D-13); origin/destination = `llm_name`; weekday name; slot label.
+- **Benchmark prompt**: v1 wording (D-13) with the clock time appended to the slot label, e.g. "Evening Rush (18:00)" (D-38); schema = v1 fields + one-line descriptions (D-39); origin/destination = `llm_name`; weekday name. Exact text: [IO_SPEC.md](IO_SPEC.md).
 - **Conditions**: A = lowest thinking the model allows (Gemini 3.x: `thinking_level=MINIMAL`; thinking cannot be fully
   disabled), B = `HIGH`; temperature 1.0 explicit; thought tokens logged per answer (D-26).
 - **Samples**: 1 per query; consistency subset = 10 routes (`consistency_routes.csv`, balanced greedy pick) × 2 extra

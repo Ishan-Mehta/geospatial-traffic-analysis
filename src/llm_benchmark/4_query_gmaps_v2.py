@@ -232,6 +232,13 @@ def main():
     print(f"Done OK: {len(done)} | pending: {len(pending)} | error records so far: {n_err}")
     print(f"Reference week: Monday {man['reference_monday']} (IST) · routing {man['routing_preference']}"
           f"{' · trafficModel ' + man['traffic_model'] if man['traffic_model'] else ''} · alternatives {man['compute_alternatives']}")
+    first_dep = min(dt.datetime.fromisoformat(q["departure_ist"]) for q in queries)
+    deadline = first_dep - dt.timedelta(minutes=C.V2_MIN_LEAD_MINUTES)
+    print(f"Deadline: every query must be sent before {deadline:%a %d %b %Y %H:%M} IST "
+          f"(first departure {first_dep:%a %d %b %H:%M})")
+    notes = {d: n for d, n in C.V2_CALENDAR_NOTES.items()}
+    if notes:
+        print("Calendar notes in this week: " + "; ".join(f"{d}: {n}" for d, n in notes.items()))
     if args.status:
         return
 

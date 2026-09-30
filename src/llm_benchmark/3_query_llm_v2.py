@@ -11,8 +11,8 @@ Subcommands (run from src/llm_benchmark/):
 Common: --model <key in V2_LLM_MODELS> (default V2_ACTIVE_LLM). --mock forces the offline mock
 model and writes to data/benchmark_v2/mock/llm/.
 
-The benchmark prompt wording and JSON schema are IDENTICAL to v1 (D-13); only the origin /
-destination strings (landmark names) and the weekday change. Condition A = lowest thinking
+The benchmark prompt and JSON schema follow v1 (D-13) with two approved changes: the clock time
+is appended to the time-of-day label (D-38) and each schema field has a one-line description (D-39). Condition A = lowest thinking
 setting, B = high thinking (D-26); B runs last and only after approval (D-09).
 
 Safety: every answer is appended to JSONL immediately; reruns skip items already OK; failures
@@ -34,16 +34,25 @@ from v2_common import append_jsonl, haversine_m, read_jsonl, sha1_short, stable_
 
 IST = ZoneInfo("Asia/Kolkata")
 
-# Identical to v1 src/llm_benchmark/3_query_llm.py ROUTE_SCHEMA (D-13) — do not edit.
+# v1 ROUTE_SCHEMA (src/llm_benchmark/3_query_llm.py) with the SAME field names, types and enum, plus a
+# one-line description per field (D-39, approved by Ishan 2026-10-01; professor to be informed).
+# The descriptions make road names parseable and fix the time semantics (with traffic). Do not edit.
 ROUTE_SCHEMA = {
     'type': 'OBJECT',
     'required': ['suggested_route', 'estimated_distance_km', 'estimated_time_minutes', 'traffic_awareness', 'reasoning'],
     'properties': {
-        'suggested_route': {'type': 'ARRAY', 'items': {'type': 'STRING'}},
-        'estimated_distance_km': {'type': 'NUMBER'},
-        'estimated_time_minutes': {'type': 'NUMBER'},
-        'traffic_awareness': {'type': 'STRING', 'enum': ['none', 'light', 'moderate', 'heavy']},
-        'reasoning': {'type': 'STRING'},
+        'suggested_route': {'type': 'ARRAY', 'items': {'type': 'STRING'},
+                            'description': "Ordered list of the road names you would drive on, from origin to "
+                                           "destination (e.g. 'Hosur Road', 'Outer Ring Road'). Road names only."},
+        'estimated_distance_km': {'type': 'NUMBER',
+                                  'description': "Estimated driving distance in kilometres."},
+        'estimated_time_minutes': {'type': 'NUMBER',
+                                   'description': "Estimated driving time in minutes at the given day and time "
+                                                  "of day, including expected traffic."},
+        'traffic_awareness': {'type': 'STRING', 'enum': ['none', 'light', 'moderate', 'heavy'],
+                              'description': "Expected traffic level along the route at that day and time."},
+        'reasoning': {'type': 'STRING',
+                      'description': "Brief explanation of the route choice and the time estimate."},
     },
 }
 
@@ -59,14 +68,15 @@ GROUNDING_SCHEMA = {
 }
 
 
-def benchmark_prompt(origin: str, destination: str, day: str, slot_label: str) -> str:
-    """v1 wording (3_query_llm.py), unchanged."""
+def benchmark_prompt(origin: str, destination: str, day: str, slot_label: str, slot_time: str) -> str:
+    """v1 wording (3_query_llm.py); only change: the slot's clock time is appended to the label,
+    e.g. "Evening Rush (18:00)", so the LLM and Google answer for the same time (D-38)."""
     return (
         f"Origin: {origin}\n"
         f"Destination: {destination}\n"
         f"City: Bangalore, India\n"
         f"Day of the week: {day}\n"
-        f"Time of day: {slot_label}"
+        f"Time of day: {slot_label} ({slot_time})"
     )
 
 
@@ -134,7 +144,7 @@ def benchmark_items(part: str, condition: str) -> list:
                                   "slot_id": slot["id"], "slot_label": slot["label"], "sample_idx": k,
                                   "origin_id": r.origin_id, "dest_id": r.dest_id,
                                   "origin_name": r.origin_name, "dest_name": r.dest_name,
-                                  "prompt": benchmark_prompt(r.origin_name, r.dest_name, day, slot["label"])})
+                                  "prompt": benchmark_prompt(r.origin_name, r.dest_name, day, slot["label"], slot["time"])})
     # Reproducible shuffled order (D-35): any drift during the run spreads over all routes/groups.
     items.sort(key=lambda it: stable_hash(C.V2_SHUFFLE_SEED, *it["key"]))
     return items
