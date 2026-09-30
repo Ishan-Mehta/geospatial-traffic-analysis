@@ -350,7 +350,7 @@ def evaluate_geocodes(seed: pd.DataFrame, provider: str):
             continue
         top = results[0]
         name_score = token_set_ratio(s.llm_name, top["name"])
-        approx_d = float(haversine_m(s.approx_lat, s.approx_lng, top["lat"], top["lng"]))
+        approx_d = float(haversine_m(s.rough_lat, s.rough_lng, top["lat"], top["lng"]))
         area_in_addr = str(s.expected_area).lower() in top["formatted_address"].lower()
         area_ok = area_in_addr or approx_d <= C.V2_APPROX_MAX_M
         others = [r for r in results[1:] if token_set_ratio(s.llm_name, r["name"]) >= C.V2_NAME_SCORE_MIN]
@@ -397,7 +397,7 @@ def evaluate_geocodes(seed: pd.DataFrame, provider: str):
 def load_landmarks(source: str) -> pd.DataFrame:
     if source == "approx":
         lm = pd.read_csv(C.V2_LANDMARKS_SEED_CSV)
-        lm["lat"], lm["lng"], lm["place_id"] = lm.approx_lat, lm.approx_lng, ""
+        lm["lat"], lm["lng"], lm["place_id"] = lm.rough_lat, lm.rough_lng, ""
         lm["status"] = "APPROX"
         return lm
     if not C.V2_LANDMARKS_GEOCODED_CSV.exists():
@@ -639,8 +639,8 @@ def plot_landmarks(lm, fig_dir, net, title_suffix=""):
     fig_dir.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=(11, 11))
     _basemap(ax, net)
-    pts = lm.assign(plat=lm["lat"] if "lat" in lm else lm.approx_lat,
-                    plng=lm["lng"] if "lng" in lm else lm.approx_lng)
+    pts = lm.assign(plat=lm["lat"] if "lat" in lm else lm.rough_lat,
+                    plng=lm["lng"] if "lng" in lm else lm.rough_lng)
     for kind, grp in pts.groupby("kind"):
         ax.scatter(grp.plng, grp.plat, s=40, label=kind, zorder=3)
     if "status" in lm:
