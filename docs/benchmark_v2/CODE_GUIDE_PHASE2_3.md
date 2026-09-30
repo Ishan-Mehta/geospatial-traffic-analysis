@@ -1,6 +1,6 @@
 # Code guide — Phase 2 (Google ground truth) and Phase 3 (LLM queries)
 
-Written 2026-10-01 for Ishan's review. **No real API call has been made by any of this code.**
+Written 2026-10-01 for Ishan's review; updated the same day after Ishan's decisions (D-26/27/28/35/36). Exact prompts and payloads: [IO_SPEC.md](IO_SPEC.md). **No real API call has been made by any of this code.**
 Everything below was tested offline with `--mock`, fake HTTP/SDK objects, and `--dry-run`.
 Definitions: [METHODOLOGY.md](METHODOLOGY.md) §5–6 · decisions: D-26…D-34 in [DECISIONS.md](DECISIONS.md).
 
@@ -63,7 +63,7 @@ Per query (Google's first route):
    ordered OSM road names (ground truth for road overlap), arterial share, unmatched fraction (quality);
 4. road names parsed from Google's own instructions ("Turn left onto X") — independent cross-check;
 5. hotspot share of Google's line.
-Per route: **final tags** from the reference query (Wednesday MID_DAY, D-28 — to confirm), whether the group changed vs the
+Per route: **final tags** from the most frequent Google path over the 28 queries (tie → Wednesday MID_DAY, D-28), whether the group changed vs the
 provisional OSM tags, number of distinct Google paths across the 28 queries, duration min/median/max, weekday and weekend
 peak/night ratio. Outputs `gmaps_queries.csv`, `gmaps_routes.csv`, plots q1–q7 in `figures/phase2/`.
 
@@ -100,8 +100,9 @@ model name, **model version**, settings (temperature, thinking level), system-pr
 counts incl. thinking, latency, attempts, status/error, `valid_numbers` (distance and time > 0).
 Resume key = (route, day, slot, sample); errors are retried on the next run; fatal errors stop the run.
 
-**Dry-run results (no network):** grounding 64 calls ≈ $0.22 · condition A + consistency 2,576 calls ≈ $9 ·
-condition B 2,016 calls ≈ $46 (thinking tokens are the uncertain part; the 1 test call will tell us the real count).
+**Dry-run results (no network, gemini-3.8-flash):** grounding 64 calls ≈ $0.09 · condition A + consistency 2,576 calls ≈ $3.8 ·
+condition B 2,016 calls ≈ $19 (thinking tokens are the uncertain part; the 1 test call will tell us the real count).
+Queries are sent in a reproducible shuffled order (D-35).
 
 ## 6. How it was tested (all offline)
 | Test | Result |
@@ -117,10 +118,7 @@ condition B 2,016 calls ≈ $46 (thinking tokens are the uncertain part; the 1 t
 | Fatal-stop (OpenAI stub) | stops after the first call, error stored |
 Mock outputs: `data/benchmark_v2/mock/` (git-ignored, regenerable). They are **not** results.
 
-## 7. Points for you to decide (also in README "Next steps")
-1. **Routing preference:** `TRAFFIC_AWARE_OPTIMAL` (most accurate predicted traffic, same Pro price) vs `TRAFFIC_AWARE` (what the Stage-2 scraper used). Recommendation: OPTIMAL (D-27).
-2. **Which query defines a route's final tags** if Google changes path with time: Wednesday MID_DAY (D-28).
-3. **Condition A for Gemini 3.x:** thinking cannot be switched off; A = `MINIMAL` (lowest), B = `HIGH`. Thought tokens are logged per answer (D-26).
-4. **Grounding prompt** wording (`prompts/grounding_system_prompt.txt` + the user line in `grounding_prompt()`).
-5. **Endpoint tolerance** rule for large sites (D-29).
-Then, paid steps (each needs your yes): 1 Routes test query → full Google run; Gemini billing + 1 test call → grounding → condition A.
+## 7. Decisions
+Decided 2026-10-01: OPTIMAL routing (D-27) · most-frequent-path tags (D-28) · A = `LOW`, B = `HIGH` on gemini-3.8-flash (D-26, D-36) ·
+endpoint tolerance (D-29) · shuffled order (D-35). Still open: reference week (D-37), professor-level prompt/schema
+tweaks (IO_SPEC §6.1), grounding flag rule, optional gemini-2.5-flash comparison, Batch API.

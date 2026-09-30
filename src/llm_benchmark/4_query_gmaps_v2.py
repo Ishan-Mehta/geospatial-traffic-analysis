@@ -73,7 +73,7 @@ def load_or_create_manifest(d, mock: bool, create: bool):
     now = dt.datetime.now(IST)
     man = {
         "created_at_ist": now.isoformat(timespec="seconds"),
-        "reference_monday": next_reference_monday(now).isoformat(),
+        "reference_monday": (C.V2_REFERENCE_MONDAY or next_reference_monday(now).isoformat()),
         "routing_preference": C.V2_ROUTING_PREFERENCE,
         "traffic_model": C.V2_TRAFFIC_MODEL if C.V2_ROUTING_PREFERENCE == "TRAFFIC_AWARE_OPTIMAL" else None,
         "compute_alternatives": C.V2_COMPUTE_ALTERNATIVES,
@@ -99,6 +99,8 @@ def build_queries(routes: pd.DataFrame, man: dict) -> list:
                            "departure_ist": dep.isoformat(),
                            "departure_utc": dep.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
                            "origin": (r.origin_lat, r.origin_lng), "dest": (r.dest_lat, r.dest_lng)})
+    # Reproducible shuffled order (D-35): any drift during the run spreads over all routes/groups.
+    qs.sort(key=lambda q: stable_hash(C.V2_SHUFFLE_SEED, q["route_id"], q["day"], q["slot_id"]))
     return qs
 
 

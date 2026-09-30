@@ -6,6 +6,7 @@ Branch: `benchmark-v2` · v1 snapshot: commit `0df60ba` on `main` · outputs: `d
 | Doc | What it holds (single source of truth for…) |
 |---|---|
 | [PHASE1_RESULTS.md](PHASE1_RESULTS.md) | **The 72-route list + Phase 1 summary** (for Ishan / professor) |
+| [IO_SPEC.md](IO_SPEC.md) | **Exact prompts, request configs, output formats, and the LLM↔Google comparison row** |
 | [CODE_GUIDE_PHASE2_3.md](CODE_GUIDE_PHASE2_3.md) | **How the Phase 2/3 code works, how it was tested, what to decide** (for review) |
 | [AUDIT_v1.md](AUDIT_v1.md) | Why v1 was redone — Phase 0 findings with numbers |
 | [METHODOLOGY.md](METHODOLOGY.md) | Definitions, formulas, thresholds (landmark, route, query, tags, hotspot, metrics) |
@@ -70,7 +71,9 @@ API usage so far: 1 free Places test call + 72 Places Text Search calls (inside 
 ## Next steps (in order; 🛑 = Ishan decides / approves)
 **🛑 Gate 3 — route list review** (Ishan + professor, using PHASE1_RESULTS.md). Changes → edit seed/decisions, rerun `pairs` (free).
 
-**🛑 Review of Phase 2/3 code** ([CODE_GUIDE_PHASE2_3.md](CODE_GUIDE_PHASE2_3.md) §7): routing preference (D-27), tag reference query (D-28), Gemini thinking levels (D-26), grounding prompt, endpoint tolerance (D-29).
+**Decided 2026-10-01:** OPTIMAL routing (D-27), most-frequent-path tags (D-28), thinking A=LOW/B=HIGH (D-26), shuffled order (D-35), gemini-3.8-flash (D-36), endpoint tolerance (D-29).
+
+**🛑 Still open:** reference week (D-37, holidays) · professor: prompt/schema tweaks in [IO_SPEC.md](IO_SPEC.md) §6.1 · grounding flag rule (coords AND locality?) · optional gemini-2.5-flash comparison · Batch API (50 % cheaper, ≤ 24 h).
 
 **Phase 2 — Google ground truth** (code ready)
 1. **🛑** `4_query_gmaps_v2.py --limit 1` — one real query, shown to Ishan (≈ $0).
@@ -80,13 +83,13 @@ API usage so far: 1 free Places test call + 72 Places Text Search calls (inside 
 **Phase 3 — LLM, condition A** (code ready)
 1. **🛑** Enable billing on the Gemini key (BILLING_AND_KEYS.md §A) — Ishan.
 2. **🛑** 1 test call (`benchmark --condition A --limit 1`) → check thought tokens, model version, answer.
-3. **🛑** grounding (64 calls ≈ $0.22) → `grounding-eval` (offline).
-4. **🛑** condition A + consistency (2,576 calls ≈ $9).
+3. **🛑** grounding (64 calls ≈ $0.09) → `grounding-eval` (offline).
+4. **🛑** condition A + consistency (2,576 calls ≈ $3.8, gemini-3.8-flash).
 
 **Phase 4 — metrics** (`5_compare_results_v2.py`): log-ratio and absolute error (distance, time), over/under, medians; time-of-day sensitivity (LLM peak/night ratio vs Google's); traffic-awareness Spearman; road validity vs OSM names; Jaccard road overlap; repeat spread; naive baseline (straight line × 1.22 detour at per-slot typical speed); all split by band / road type / hotspot / slot / day; grounding-check failures reported separately.
 
 **Phase 5 — charts + narrative** (`6_visualize_benchmark_v2.py`): log-scale scatters, time-of-day sensitivity plot, validity/overlap bars, error by group; findings vs midsem hypotheses; v1 as "pilot / lessons learned".
 
-**Phase 3b — condition B (thinking on)** — last, costliest (≈ $25–60): **🛑 separate approval**.
+**Phase 3b — condition B (thinking on)** — last, costliest (≈ $19 with gemini-3.8-flash): **🛑 separate approval**.
 
 **Later (optional):** condition C context ablation · OSM-Dijkstra ground truth (midsem idea) · other LLMs · MapmyIndia.

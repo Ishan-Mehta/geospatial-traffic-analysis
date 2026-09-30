@@ -201,7 +201,9 @@ V2_ENDPOINT_MAX_OFFSET_M = 150                         # Google start/end vs our
 V2_ENDPOINT_EXTRA_M = 100                              # large sites: allowed = max(150, landmark snap_m + 100) (D-29)
 V2_MATCH_STEP_M = 20                                   # map-matching sample spacing
 V2_MATCH_MAX_DIST_M = 25                               # sample farther than this from any OSM edge = unmatched
-V2_TAG_REFERENCE_QUERY = ("Wednesday", "MID_DAY")      # whose Google route defines final route tags (D-28, to confirm)
+V2_TAG_REFERENCE_QUERY = ("Wednesday", "MID_DAY")      # tie-break only: final tags use the MOST FREQUENT Google path (D-28)
+V2_REFERENCE_MONDAY = None                             # e.g. "2026-10-05" to force the reference week (avoid holidays); None = next Monday
+V2_SHUFFLE_SEED = "benchmark-v2"                       # queries are sent in a reproducible shuffled order (D-35)
 
 # --- Phase 3: LLM queries (provider-agnostic, D-12) ---
 V2_LLM_DIR = V2_DIR / "llm"
@@ -209,11 +211,22 @@ V2_GROUNDING_SYSTEM_PROMPT_FILE = _CONFIG_DIR / "prompts" / "grounding_system_pr
 V2_CONSISTENCY_ROUTES_CSV = V2_DIR / "consistency_routes.csv"
 V2_CONSISTENCY_N_ROUTES = 10
 V2_CONSISTENCY_EXTRA_SAMPLES = 2                       # sample_idx 1 and 2 (condition A only)
-V2_ACTIVE_LLM = "gemini_35_flash"
+V2_ACTIVE_LLM = "gemini_38_flash"                     # D-36
 # Each model: provider adapter in llm_clients.py, per-condition generation settings, prices (USD / 1M tokens)
 # Gemini 3.x cannot fully disable thinking: condition A uses the lowest level (MINIMAL) and every
 # record logs the thought-token count (D-26).
 V2_LLM_MODELS = {
+    # Main model (D-36). Docs list thinking levels low/medium/high for 3.8/3.7 Flash -> A = LOW (lowest), B = HIGH.
+    # Price $0.75 / $3.75 per 1M tokens until 2026-12-31, then $1.50 / $7.50 -> finish LLM runs in 2026.
+    "gemini_38_flash": {
+        "provider": "gemini", "model_name": "gemini-3.8-flash", "api_key_env": "GEMINI_API_KEY",
+        "temperature": 1.0,
+        "conditions": {"A": {"thinking_level": "LOW"}, "B": {"thinking_level": "HIGH"}},
+        "price_in_per_m": 0.75, "price_out_per_m": 3.75,
+        "est_tokens": {"A": (220, 350), "B": (220, 2500)},
+        "min_interval_s": 0.5,
+    },
+    # v1 pilot model, kept for reference / optional comparison
     "gemini_35_flash": {
         "provider": "gemini", "model_name": "gemini-3.5-flash", "api_key_env": "GEMINI_API_KEY",
         "temperature": 1.0,

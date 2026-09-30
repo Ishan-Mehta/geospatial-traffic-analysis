@@ -12,7 +12,7 @@ Per query (primary route = routes[0]):
   endpoint offsets (Google's start/end vs our landmark coordinates, check <= 150 m);
   map-matched OSM road-name sequence (ground truth for road overlap) + arterial share;
   road names parsed from Google's step instructions (cross-check); hotspot share.
-Per route: final tags from the reference query (V2_TAG_REFERENCE_QUERY, default Wednesday MID_DAY),
+Per route: final tags from the MOST FREQUENT Google path over the 28 queries (tie -> Wednesday MID_DAY),
   change vs provisional (OSM) tags, number of distinct Google paths over the 28 queries,
   duration range, weekday/weekend peak-to-night ratios.
 
@@ -111,8 +111,15 @@ def route_summary(q: pd.DataFrame, od: pd.DataFrame, band_medians: dict) -> pd.D
     out = []
     for rid, g in q.groupby("route_id"):
         prov = od.set_index("route_id").loc[rid]
-        ref = g[(g.day == ref_day) & (g.slot_id == ref_slot)]
-        ref = ref.iloc[0] if len(ref) else g.iloc[0]
+        # Final tags come from the path Google chose most often over the 28 queries (D-28);
+        # among queries on that path, prefer the Wednesday MID_DAY one, else the first.
+        counts = g.path_key.value_counts()
+        top = counts[counts == counts.max()].index
+        wed = g[(g.day == ref_day) & (g.slot_id == ref_slot)]
+        modal_key = wed.path_key.iloc[0] if len(wed) and wed.path_key.iloc[0] in top else sorted(top)[0]
+        on_path = g[g.path_key == modal_key]
+        pref = on_path[(on_path.day == ref_day) & (on_path.slot_id == ref_slot)]
+        ref = pref.iloc[0] if len(pref) else on_path.iloc[0]
         band = band_of(ref.distance_m)
         rt = road_type_of(ref.arterial_share_google)
         med = band_medians.get(band, np.nan)
@@ -123,6 +130,7 @@ def route_summary(q: pd.DataFrame, od: pd.DataFrame, band_medians: dict) -> pd.D
         out.append({
             "route_id": rid, "origin_name": prov.origin_name, "dest_name": prov.dest_name,
             "n_queries_ok": len(g), "reference_query": f"{ref.day} {ref.slot_id}",
+            "modal_path_share": round(float(counts.max()) / len(g), 3),
             "google_distance_m": int(ref.distance_m), "osm_m_provisional": int(prov.osm_m),
             "band_google": band, "band_provisional": prov.band,
             "arterial_share_google": ref.arterial_share_google, "arterial_share_provisional": prov.arterial_share,
