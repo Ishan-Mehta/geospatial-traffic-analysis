@@ -663,7 +663,7 @@ def plot_geocode_quality(lm, fig_dir):
         "area": q.area_in_address | (q.approx_dist_m <= C.V2_APPROX_MAX_M),
         "near_approx": q.approx_dist_m <= C.V2_APPROX_MAX_M,
         "unambiguous": q.ambiguity_m <= C.V2_AMBIGUITY_M,
-        "point_type": ~q.flags.fillna("").str.contains("area_type"),
+        "point_type": ~q["flags"].fillna("").str.contains("area_type"),
         "snap": q.snap_m <= C.V2_SNAP_MAX_M,
     }
     fig, axes = plt.subplots(1, 2, figsize=(13, 4.5))
