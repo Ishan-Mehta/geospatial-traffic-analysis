@@ -259,7 +259,7 @@ class OsmNetwork:
         idx, dist = self._edge_tree.query_nearest(pts, return_distance=True, all_matches=False)
         # query_nearest returns [[input_idx...], [tree_idx...]]
         nearest = {int(i): (int(t), float(dd)) for i, t, dd in zip(idx[0], idx[1], dist)}
-        names, matched, arterial = [], 0, 0
+        runs, matched, arterial = [], 0, 0          # runs = [name, consecutive samples]
         for i in range(len(pts)):
             t, dd = nearest.get(i, (None, 1e9))
             if t is None or dd > max_dist_m:
@@ -268,9 +268,17 @@ class OsmNetwork:
             matched += 1
             if edge_highway(d) in C.V2_ARTERIAL_HIGHWAYS:
                 arterial += 1
-            for n in edge_names(d):
-                if not names or names[-1] != n:
-                    names.append(n)
+            nm = (edge_names(d) or [None])[0]
+            if runs and runs[-1][0] == nm:
+                runs[-1][1] += 1
+            else:
+                runs.append([nm, 1])
+        # Drop "flicker": names held for fewer than V2_MATCH_MIN_RUN samples (~60 m) — side streets touched at
+        # junctions or parallel carriageways — then collapse consecutive duplicates.
+        names = []
+        for nm, k in runs:
+            if nm and k >= C.V2_MATCH_MIN_RUN and (not names or names[-1] != nm):
+                names.append(nm)
         return {"road_names": names,
                 "arterial_share": arterial / matched if matched else 0.0,
                 "unmatched_frac": 1 - matched / len(pts),

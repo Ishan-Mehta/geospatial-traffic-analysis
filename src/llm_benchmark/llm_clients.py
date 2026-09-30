@@ -89,6 +89,8 @@ def _gemini(cfg, system_prompt, user_prompt, schema, condition) -> LLMResult:
         response_json_schema=schema,
         temperature=cfg["temperature"],
         thinking_config=thinking,
+        # no tools / function calling: the model must answer from its own knowledge (also silences an SDK warning)
+        automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
     )
     try:
         resp = client.models.generate_content(model=cfg["model_name"], contents=user_prompt, config=gen_cfg)
