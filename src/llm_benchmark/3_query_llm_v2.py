@@ -135,6 +135,8 @@ def benchmark_items(part: str, condition: str) -> list:
                                   "origin_id": r.origin_id, "dest_id": r.dest_id,
                                   "origin_name": r.origin_name, "dest_name": r.dest_name,
                                   "prompt": benchmark_prompt(r.origin_name, r.dest_name, day, slot["label"])})
+    # Reproducible shuffled order (D-35): any drift during the run spreads over all routes/groups.
+    items.sort(key=lambda it: stable_hash(C.V2_SHUFFLE_SEED, *it["key"]))
     return items
 
 
