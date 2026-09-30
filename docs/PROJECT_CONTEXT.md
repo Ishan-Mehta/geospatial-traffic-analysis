@@ -3,6 +3,11 @@
 > **Purpose of this document:** This is a handoff context file for an AI agent continuing work on this project.
 > The project is located at: `/Users/ishanmehta/Desktop/Projects/Geospatial_MMI/`
 
+> **⚠️ Update 2026-09-30 — Stage 6 is being redesigned (v2).** The v1 benchmark below was audited and found ill-posed
+> (see `docs/benchmark_v2/AUDIT_v1.md`). In particular the "22/112 done" status is wrong: only **1** of the 22 saved
+> Gemini records has a response. Current work: branch `benchmark-v2`, docs in `docs/benchmark_v2/` (start at its README).
+> The sections below describe v1 and are kept unchanged for the pilot/lessons-learned record.
+
 ---
 
 ## 1. Project Summary
