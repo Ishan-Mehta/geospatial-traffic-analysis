@@ -9,7 +9,7 @@ Subcommands (run from src/llm_benchmark/):
                                      the benchmark prompt for every query (route × day × slot)
   status          [--mock]           progress of every output file, no network
 Common: --model <key in V2_LLM_MODELS> (default V2_ACTIVE_LLM). --mock forces the offline mock
-model and writes to data/benchmark_v2/mock/llm/.
+model and writes to data/benchmark_v2/mock/llm/. --workers N sends N requests in parallel (default 1).
 
 The benchmark prompt and JSON schema follow v1 (D-13) with two approved changes: the clock time
 is appended to the time-of-day label (D-38) and each schema field has a one-line description (D-39). Condition A = lowest thinking
@@ -22,7 +22,9 @@ are stored with the error and retried next run; fatal configuration errors stop 
 import argparse
 import datetime as dt
 import sys
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from zoneinfo import ZoneInfo
 
 import numpy as np
@@ -168,7 +170,7 @@ def record_key(rec: dict, kind: str):
 #  Runner (shared by grounding and benchmark)
 # =====================================================================
 def run(kind: str, items: list, model_key: str, condition: str, system_prompt: str, schema: dict,
-        out_path, dry_run: bool, limit: int, mock: bool):
+        out_path, dry_run: bool, limit: int, mock: bool, workers: int = 1):
     cfg = C.V2_LLM_MODELS[model_key]
     records = read_jsonl(out_path)
     done = {record_key(r, kind) for r in records if r.get("status") == "ok"}
@@ -191,13 +193,18 @@ def run(kind: str, items: list, model_key: str, condition: str, system_prompt: s
         return
 
     sys_sha = sha1_short(system_prompt)
-    made = 0
-    for i, it in enumerate(todo, 1):
+    lock = threading.Lock()          # one writer at a time: JSONL lines and console output never interleave
+    stop = threading.Event()         # set on a fatal error -> every worker stops taking new items
+    counters = {"made": 0, "done": 0}
+
+    def ask(it) -> tuple:
+        """All attempts for one item (runs inside a worker). Returns (result, attempts)."""
         res, attempts, bad = None, 0, 0
-        while attempts < C.V2_LLM_MAX_ATTEMPTS:
+        while attempts < C.V2_LLM_MAX_ATTEMPTS and not stop.is_set():
             attempts += 1
             res = call_llm(model_key, system_prompt, it["prompt"], schema, condition)
-            made += 1
+            with lock:
+                counters["made"] += 1
             if res.ok or res.error_kind == "fatal":
                 break
             if res.error_kind == "bad_output":
@@ -205,10 +212,18 @@ def run(kind: str, items: list, model_key: str, condition: str, system_prompt: s
                 if bad >= 3:
                     break
                 continue
-            wait = res.retry_after_s or min(60, 2 ** attempts)
-            wait = 0 if mock else wait
-            print(f"    retry {attempts}/{C.V2_LLM_MAX_ATTEMPTS} in {wait:.0f}s ({res.error[:70]})")
+            wait = 0 if mock else (res.retry_after_s or min(60, 2 ** attempts))
+            with lock:
+                print(f"    retry {attempts}/{C.V2_LLM_MAX_ATTEMPTS} in {wait:.0f}s ({res.error[:70]})")
             time.sleep(wait)
+        return res, attempts
+
+    def work(it):
+        if stop.is_set():
+            return
+        res, attempts = ask(it)
+        if res is None:                                   # stopped before the first attempt
+            return
         rec = {k: v for k, v in it.items() if k not in ("key",)}
         rec.update({"kind": kind, "condition": condition, "model_key": model_key, "provider": cfg["provider"],
                     "model_name": cfg["model_name"], "system_prompt_sha1": sys_sha,
@@ -217,29 +232,44 @@ def run(kind: str, items: list, model_key: str, condition: str, system_prompt: s
                     "model_version": res.model_version, "settings": res.settings,
                     "prompt_tokens": res.prompt_tokens, "output_tokens": res.output_tokens,
                     "thought_tokens": res.thought_tokens, "latency_s": res.latency_s,
-                    "error": res.error, "error_kind": res.error_kind, "mock": mock,
+                    "error": res.error, "error_kind": res.error_kind, "mock": mock, "workers": workers,
                     "query_timestamp": dt.datetime.now(IST).isoformat(timespec="seconds")})
         if kind == "benchmark" and res.ok:
             p = res.parsed or {}
             rec["valid_numbers"] = bool(isinstance(p.get("estimated_distance_km"), (int, float))
                                         and isinstance(p.get("estimated_time_minutes"), (int, float))
                                         and p["estimated_distance_km"] > 0 and p["estimated_time_minutes"] > 0)
-        append_jsonl(out_path, rec)
         label = it.get("route_id", it.get("landmark_id"))
         extra = (f"{it['day'][:3]} {it['slot_id']:8s} s{it['sample_idx']}" if kind == "benchmark" else it["llm_name"])
-        if res.ok:
-            p = res.parsed
-            summ = (f"{p.get('estimated_distance_km')} km, {p.get('estimated_time_minutes')} min, {p.get('traffic_awareness')}"
-                    if kind == "benchmark" else f"{p.get('locality')} ({p.get('latitude')}, {p.get('longitude')})")
-            print(f"[{i}/{len(todo)}] OK  {label} {extra} -> {summ} · thought tokens {res.thought_tokens}")
-        else:
-            print(f"[{i}/{len(todo)}] ERR {label} {extra} -> {res.error}")
-        if res.error_kind == "fatal":
-            print(f"STOPPED: {res.error}")
-            break
+        with lock:
+            append_jsonl(out_path, rec)
+            counters["done"] += 1
+            n = counters["done"]
+            if res.ok:
+                p = res.parsed
+                summ = (f"{p.get('estimated_distance_km')} km, {p.get('estimated_time_minutes')} min, "
+                        f"{p.get('traffic_awareness')}" if kind == "benchmark"
+                        else f"{p.get('locality')} ({p.get('latitude')}, {p.get('longitude')})")
+                print(f"[{n}/{len(todo)}] OK  {label} {extra} -> {summ} · thought tokens {res.thought_tokens}")
+            else:
+                print(f"[{n}/{len(todo)}] ERR {label} {extra} -> {res.error}")
+            if res.error_kind == "fatal" and not stop.is_set():
+                stop.set()
+                print(f"STOPPED: {res.error}")
         if not mock:
-            time.sleep(cfg.get("min_interval_s", 0))
-    print(f"API calls made this run (incl. retries): {made}{' (mock, no network)' if mock else ''}")
+            time.sleep(cfg.get("min_interval_s", 0))      # per-worker pause
+
+    if workers <= 1:
+        for it in todo:
+            if stop.is_set():
+                break
+            work(it)
+    else:
+        print(f"Running with {workers} parallel workers")
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            for f in [pool.submit(work, it) for it in todo]:
+                f.result()                                # re-raise unexpected exceptions
+    print(f"API calls made this run (incl. retries): {counters['made']}{' (mock, no network)' if mock else ''}")
 
 
 # =====================================================================
@@ -307,6 +337,7 @@ def main():
         p = sub.add_parser(name)
         p.add_argument("--dry-run", action="store_true")
         p.add_argument("--limit", type=int)
+        p.add_argument("--workers", type=int, default=1, help="parallel requests (e.g. 4 on a paid key)")
         if name == "benchmark":
             p.add_argument("--condition", choices=["A", "B"], required=True)
             p.add_argument("--part", choices=["main", "consistency", "all"], default="main")
@@ -328,13 +359,14 @@ def main():
     if args.cmd == "grounding":
         system_prompt = C.V2_GROUNDING_SYSTEM_PROMPT_FILE.read_text(encoding="utf-8").strip()
         run("grounding", grounding_items(), model_key, "A", system_prompt, GROUNDING_SCHEMA,
-            d / f"{model_key}_grounding.jsonl", args.dry_run, args.limit, args.mock)
+            d / f"{model_key}_grounding.jsonl", args.dry_run, args.limit, args.mock, args.workers)
     else:
         if args.condition == "B" and not args.dry_run and not args.mock:
             print("NOTE: condition B (thinking on) is the costliest step and needs Ishan's explicit approval (D-09).")
         system_prompt = C.SYSTEM_PROMPT_FILE.read_text(encoding="utf-8").strip()
         run("benchmark", benchmark_items(args.part, args.condition), model_key, args.condition, system_prompt,
-            ROUTE_SCHEMA, d / f"{model_key}_{args.condition}.jsonl", args.dry_run, args.limit, args.mock)
+            ROUTE_SCHEMA, d / f"{model_key}_{args.condition}.jsonl", args.dry_run, args.limit, args.mock,
+            args.workers)
 
 
 if __name__ == "__main__":

@@ -15,6 +15,18 @@ Cost estimates for the project: see the plan's cost table (≈ $8 without condit
    - **Hard cap**: Cloud Console → **APIs & Services → Enabled APIs → Generative Language API → Quotas & system limits** → edit "Requests per day" (e.g. 3,000). Requests beyond it fail with 429 and the script resumes later.
 5. Test: Claude runs one call with `--limit 1` (after you approve) and shows you the result.
 
+## A2. Our situation (checked by Ishan in AI Studio, 2026-10-01)
+| Project | Keys | Billing tier | Status |
+|---|---|---|---|
+| Default Gemini Project (`gen-lang-client-0190754255`) | 2 (the key currently in `.env`) | **Free tier** | — |
+| My First Project (`project-616e4e16-…`) | 1 | Tier 1 · Postpay | **"Prepay required"** |
+"Prepay required" = Google wants prepaid Gemini credit loaded before this project can make paid calls (appears for some
+newer accounts). **Recommended:** use *My First Project* → **Set up prepay** → load **≈ ₹1,000** first (covers tests,
+grounding, condition A for both models ≈ $6, with margin; GST may be added) → top up ≈ ₹2,000 before condition B.
+Prepaid credit is itself a **hard spending cap**. Then copy that project's key into `.env` as `GEMINI_API_KEY`
+(Ishan does this; keys are never pasted in chat) → Claude verifies with 1 test call.
+Optional second net: budget alert ≈ ₹3,000 on the billing account.
+
 ## B. Google Maps key (Places API (New), Routes API, Geocoding API)
 1. Cloud Console → select the key's project → **APIs & Services → Library** → search and **Enable**: `Places API (New)`, `Routes API`, `Geocoding API`.
 2. **Billing** must be linked (same as A2). Monthly free usage per SKU applies automatically (Routes Pro 5,000/month, Places Text Search Pro 5,000/month, Geocoding 10,000/month — shared across all projects on the billing account).

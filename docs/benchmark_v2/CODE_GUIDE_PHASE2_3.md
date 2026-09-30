@@ -99,6 +99,10 @@ Record fields: route, day, slot, sample index, origin/destination ids + names, t
 model name, **model version**, settings (temperature, thinking level), system-prompt hash, parsed + raw answer, token
 counts incl. thinking, latency, attempts, status/error, `valid_numbers` (distance and time > 0).
 Resume key = (route, day, slot, sample); errors are retried on the next run; fatal errors stop the run.
+**Parallel option `--workers N`** (default 1, D-44): N threads each take the next item and call the API independently;
+a lock serialises JSONL writes and console output; a fatal error sets a stop flag (in-flight calls finish, nothing new
+starts); each worker keeps its own pause and 429 back-off. Tested with the mock: 4 workers → 2,576 unique answers, 0
+duplicates, rerun makes 0 calls; fatal stop after the 4 in-flight calls.
 
 **Dry-run results (no network, gemini-3.8-flash):** grounding 64 calls ≈ $0.09 · condition A + consistency 2,576 calls ≈ $3.8 ·
 condition B 2,016 calls ≈ $19 (thinking tokens are the uncertain part; the 1 test call will tell us the real count).

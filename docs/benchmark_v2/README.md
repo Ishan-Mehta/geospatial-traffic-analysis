@@ -68,7 +68,7 @@ API usage so far: 1 free Places test call + 72 Places Text Search calls (inside 
 | `python 4b_process_gmaps_v2.py` | Offline: endpoints check, map-matching, final tags, plots | No |
 | `python 3_query_llm_v2.py select-consistency` · `grounding-eval` · `status` | Offline helpers | No |
 | `python 3_query_llm_v2.py grounding [--dry-run\|--limit N]` | Where-is-landmark check | **Yes** (Gemini) |
-| `python 3_query_llm_v2.py benchmark --condition A\|B [--part main\|consistency\|all] [--dry-run\|--limit N]` | Benchmark queries | **Yes** (Gemini) |
+| `python 3_query_llm_v2.py benchmark --condition A\|B [--part main\|consistency\|all] [--dry-run\|--limit N] [--workers 4]` | Benchmark queries (parallel option) | **Yes** (Gemini) |
 | any of the above with `--mock` | Offline fake answers into `data/benchmark_v2/mock/` | No |
 
 ## Next steps (in order; 🛑 = Ishan decides / approves)
@@ -79,6 +79,10 @@ API usage so far: 1 free Places test call + 72 Places Text Search calls (inside 
 **⏰ Deadline:** the Google run must finish **before Mon 5 Oct 2026, 07:30 IST** (else week of 26 Oct).
 
 **🛑 Still open:** professor items ([PROFESSOR_DISCUSSION.md](PROFESSOR_DISCUSSION.md)) · Batch API (Ishan: maybe tomorrow) · no push for now (history contains Google data; repo is public).
+
+**Gemini billing (D-45, pending):** *My First Project* → Set up prepay (≈ ₹1,000) → its key into `.env` → 1 test call. Current `.env` key = Default Gemini Project (free tier).
+
+**Estimated run time (paid tier, 4 workers for Gemini):** Google ~25–50 min · grounding ~1 min · 3.8-flash A + consistency < 1 h · 2.5-flash A ~20 min · 3.8-flash B ~1.5–4 h.
 
 **First live tests (≈ 7 paid calls, cents; each needs Ishan's go):** (1) Google `--limit 1` → inspect raw JSON; (2) `4b` on it (offline) → check endpoints, road sequence; (3) Gemini: `grounding --limit 1`, `benchmark --condition A --limit 1` for gemini_38_flash and gemini_25_flash, `--condition B --limit 1` for gemini_38_flash (measures thinking tokens) → inspect answers, model versions, token counts; (4) re-estimate costs from the real token counts.
 
