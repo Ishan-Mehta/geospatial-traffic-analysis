@@ -264,5 +264,8 @@ V2_LLM_MODELS = {
     },
 }
 V2_LLM_MAX_ATTEMPTS = 5
+V2_LLM_MAX_RPM = 60                                    # all workers together never exceed this many requests/minute (D-52)
+V2_LLM_COOLDOWN_S = 30                                 # on any 429, every worker pauses at least this long (D-52)
+V2_LLM_STOP_AFTER_CONSECUTIVE_ERRORS = 10              # e.g. daily quota reached -> stop, resume later (D-52)
 V2_GROUNDING_MAX_M = 2000                              # LLM point > 2 km from Google's point = 'far'
 V2_GROUNDING_RULE = "coords_and_locality"             # misplaced if far AND locality not in Google address; or "coords_only" (D-34)

@@ -101,7 +101,8 @@ counts incl. thinking, latency, attempts, status/error, `valid_numbers` (distanc
 Resume key = (route, day, slot, sample); errors are retried on the next run; fatal errors stop the run.
 **Parallel option `--workers N`** (default 1, D-44): N threads each take the next item and call the API independently;
 a lock serialises JSONL writes and console output; a fatal error sets a stop flag (in-flight calls finish, nothing new
-starts); each worker keeps its own pause and 429 back-off. Tested with the mock: 4 workers → 2,576 unique answers, 0
+starts); all workers share a request-rate cap (60/min) and a cool-down after any 429 (≥ 30 s); the run stops after 10
+consecutive failures (D-52). Tested with the mock: 4 workers → 2,576 unique answers, 0
 duplicates, rerun makes 0 calls; fatal stop after the 4 in-flight calls.
 
 **Dry-run results (no network, gemini-3.8-flash):** grounding 64 calls ≈ $0.09 · condition A + consistency 2,576 calls ≈ $3.8 ·

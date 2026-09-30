@@ -195,13 +195,29 @@ def run(kind: str, items: list, model_key: str, condition: str, system_prompt: s
     sys_sha = sha1_short(system_prompt)
     lock = threading.Lock()          # one writer at a time: JSONL lines and console output never interleave
     stop = threading.Event()         # set on a fatal error -> every worker stops taking new items
-    counters = {"made": 0, "done": 0}
+    counters = {"made": 0, "done": 0, "consecutive_err": 0}
+    # Shared pacing (D-52): a global request-rate cap and a shared cool-down after any 429
+    pace = {"next_slot": 0.0, "cooldown_until": 0.0}
+    pace_lock = threading.Lock()
+    interval = 0 if mock else 60.0 / C.V2_LLM_MAX_RPM
+
+    def wait_for_slot():
+        """Block until this worker may send a request (rate cap + cool-down shared by all workers)."""
+        while True:
+            with pace_lock:
+                now = time.time()
+                start = max(pace["next_slot"], pace["cooldown_until"], now)
+                if start <= now:
+                    pace["next_slot"] = now + interval
+                    return
+            time.sleep(min(start - now, 5))
 
     def ask(it) -> tuple:
         """All attempts for one item (runs inside a worker). Returns (result, attempts)."""
         res, attempts, bad = None, 0, 0
         while attempts < C.V2_LLM_MAX_ATTEMPTS and not stop.is_set():
             attempts += 1
+            wait_for_slot()
             res = call_llm(model_key, system_prompt, it["prompt"], schema, condition)
             with lock:
                 counters["made"] += 1
@@ -213,6 +229,10 @@ def run(kind: str, items: list, model_key: str, condition: str, system_prompt: s
                     break
                 continue
             wait = 0 if mock else (res.retry_after_s or min(60, 2 ** attempts))
+            if "rate limit" in (res.error or "").lower() and not mock:
+                wait = max(wait, C.V2_LLM_COOLDOWN_S)
+                with pace_lock:                                   # everyone pauses, not just this worker
+                    pace["cooldown_until"] = max(pace["cooldown_until"], time.time() + wait)
             with lock:
                 print(f"    retry {attempts}/{C.V2_LLM_MAX_ATTEMPTS} in {wait:.0f}s ({res.error[:70]})")
             time.sleep(wait)
@@ -253,9 +273,14 @@ def run(kind: str, items: list, model_key: str, condition: str, system_prompt: s
                 print(f"[{n}/{len(todo)}] OK  {label} {extra} -> {summ} · thought tokens {res.thought_tokens}")
             else:
                 print(f"[{n}/{len(todo)}] ERR {label} {extra} -> {res.error}")
+            counters["consecutive_err"] = 0 if res.ok else counters["consecutive_err"] + 1
             if res.error_kind == "fatal" and not stop.is_set():
                 stop.set()
                 print(f"STOPPED: {res.error}")
+            elif counters["consecutive_err"] >= C.V2_LLM_STOP_AFTER_CONSECUTIVE_ERRORS and not stop.is_set():
+                stop.set()
+                print(f"STOPPED: {counters['consecutive_err']} failures in a row (last: {res.error}). "
+                      f"Answers so far are saved; rerun later to resume.")
         if not mock:
             time.sleep(cfg.get("min_interval_s", 0))      # per-worker pause
 
@@ -265,7 +290,7 @@ def run(kind: str, items: list, model_key: str, condition: str, system_prompt: s
                 break
             work(it)
     else:
-        print(f"Running with {workers} parallel workers")
+        print(f"Running with {workers} parallel workers · shared cap {C.V2_LLM_MAX_RPM} requests/min")
         with ThreadPoolExecutor(max_workers=workers) as pool:
             for f in [pool.submit(work, it) for it in todo]:
                 f.result()                                # re-raise unexpected exceptions

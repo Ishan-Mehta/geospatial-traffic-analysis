@@ -83,7 +83,7 @@ API usage so far: 1 free Places test call + 72 Places Text Search calls (inside 
 
 **Gemini billing (D-45, pending):** *My First Project* → Set up prepay (≈ ₹700; non-refundable, expires in 1 year, auto-reload OFF; check it doesn't share the Maps billing account) → its key into `.env` → 1 test call. Condition B is code-locked to ≤ 3 test calls without `--approved-by-ishan` (D-46). Current `.env` key = Default Gemini Project (free tier).
 
-**Estimated run time (paid tier, 4 workers for Gemini):** Google ~25–50 min · grounding ~1 min · 3.8-flash A + consistency < 1 h · 2.5-flash A ~20 min · 3.8-flash B ~1.5–4 h.
+**Estimated run time (4 workers, capped at 60 requests/min, D-52):** grounding ~1 min · 3.8-flash A main ~35 min · consistency ~10 min · 3.8-flash B ~35–60 min (if approved). Google already done.
 
 **First live tests (≈ 7 paid calls, cents; each needs Ishan's go):** (1) Google `--limit 1` → inspect raw JSON; (2) `4b` on it (offline) → check endpoints, road sequence; (3) Gemini: `grounding --limit 1`, `benchmark --condition A --limit 1` for gemini_38_flash and gemini_25_flash, `--condition B --limit 1` for gemini_38_flash (measures thinking tokens) → inspect answers, model versions, token counts; (4) re-estimate costs from the real token counts.
 
