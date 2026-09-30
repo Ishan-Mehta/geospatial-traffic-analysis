@@ -16,6 +16,7 @@ Adding a provider = one adapter function + one config entry; prompts and schema 
 import itertools
 import json
 import re
+import threading
 import time
 from dataclasses import asdict, dataclass, field
 
@@ -67,14 +68,16 @@ def _parse_json(text: str):
 #  Gemini (google-genai SDK)
 # =====================================================================
 _gemini_clients = {}
+_client_lock = threading.Lock()          # one client per key, created once even with parallel workers
 
 
 def _gemini(cfg, system_prompt, user_prompt, schema, condition) -> LLMResult:
     from google import genai
     from google.genai import types
 
-    if cfg["api_key_env"] not in _gemini_clients:
-        _gemini_clients[cfg["api_key_env"]] = genai.Client(api_key=load_env_key(cfg["api_key_env"]))
+    with _client_lock:
+        if cfg["api_key_env"] not in _gemini_clients:
+            _gemini_clients[cfg["api_key_env"]] = genai.Client(api_key=load_env_key(cfg["api_key_env"]))
     client = _gemini_clients[cfg["api_key_env"]]
 
     cond = cfg["conditions"][condition]
