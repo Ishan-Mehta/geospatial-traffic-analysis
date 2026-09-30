@@ -1,6 +1,6 @@
 # Stage 6 v2 — LLM vs Google Maps routing benchmark
 
-Branch: `benchmark-v2` · v1 snapshot: commit `0df60ba` on `main` · outputs: `data/benchmark_v2/` · folder: `Geospatial_MMI.nosync` (not in iCloud, D-53)
+Branch: `benchmark-v2` · v1 snapshot: commit `0df60ba` on `main` · outputs: `data/benchmark_v2/`
 
 ## Read in this order
 | Doc | What it holds (single source of truth for…) |

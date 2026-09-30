@@ -19,11 +19,12 @@ Details live in the linked docs; this page only collects the warnings.
   earlier local (unpushed) commits on `main`/`benchmark-v2` still contain some of that data → **rewrite history or make the
   repo private before any push.** Already public since earlier pushes: `data/processed/geocoded_*.csv` (Google geocoding
   coordinates) and `data/sample_response.json` (a Google Routes response) — decision pending with the professor.
-- **Backup:** this data is not in git **and not in iCloud** (the project folder is `Geospatial_MMI.nosync`, D-53) → copy
-  `data/benchmark_v2/` to a drive or cloud folder regularly (re-creating it costs API calls and cannot reproduce the same
-  predicted-traffic week or LLM samples).
-- **Folder:** the real folder is `~/Desktop/Projects/Geospatial_MMI.nosync`; `Geospatial_MMI` is a link to it. If scripts
-  ever stall with 0 % CPU, suspect iCloud file sync first (R-36).
+- **Backup:** this data is not in git. The project sits on the iCloud-synced Desktop, so iCloud holds a copy, but also keep
+  your own copy of `data/benchmark_v2/` (re-creating it costs API calls and cannot reproduce the same predicted-traffic week
+  or LLM samples).
+- **iCloud stalls:** the project (2.3 GB incl. venv, raw data, OSM graph) is synced by iCloud Desktop sync. If a script sits at
+  0 % CPU for minutes, iCloud is syncing (R-36) — wait, or pause iCloud sync while running long jobs. A `.nosync` folder
+  rename was tried and reverted (the app's file viewer cannot follow the symlink, D-53).
 - After the project, consider deleting/refreshing stored Google content in line with the terms.
 
 ## 2. What the Google numbers mean
