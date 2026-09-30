@@ -1,6 +1,6 @@
 # Stage 6 v2 — LLM vs Google Maps routing benchmark
 
-Branch: `benchmark-v2` · v1 snapshot: commit `0df60ba` on `main` · outputs: `data/benchmark_v2/`
+Branch: `benchmark-v2` · v1 snapshot: commit `0df60ba` on `main` · outputs: `data/benchmark_v2/` · folder: `Geospatial_MMI.nosync` (not in iCloud, D-53)
 
 ## Read in this order
 | Doc | What it holds (single source of truth for…) |
@@ -8,6 +8,7 @@ Branch: `benchmark-v2` · v1 snapshot: commit `0df60ba` on `main` · outputs: `d
 | [PROFESSOR_DISCUSSION.md](PROFESSOR_DISCUSSION.md) | **Questions for the professor** (summary first, details after) |
 | [IMPORTANT_NOTES.md](IMPORTANT_NOTES.md) | ⚠️ **Read first** — data-use/compliance, what the numbers mean, caveats for the report |
 | [PHASE1_RESULTS.md](PHASE1_RESULTS.md) | **The 72-route list + Phase 1 summary** (for Ishan / professor) |
+| [PHASE3_RESULTS.md](PHASE3_RESULTS.md) | **LLM results so far** (grounding, condition A, consistency, cost, first comparison) |
 | [PHASE2_RESULTS.md](PHASE2_RESULTS.md) | **Google ground-truth results** (2,016 queries) |
 | [IO_SPEC.md](IO_SPEC.md) | **Exact prompts, request configs, output formats, and the LLM↔Google comparison row** |
 | [CODE_GUIDE_PHASE2_3.md](CODE_GUIDE_PHASE2_3.md) | **How the Phase 2/3 code works, how it was tested, what to decide** (for review) |
@@ -27,8 +28,9 @@ Branch: `benchmark-v2` · v1 snapshot: commit `0df60ba` on `main` · outputs: `d
 | 1b Routes: candidates → tags → selection | ✅ **72 routes, 4 in each of 18 groups** |
 | **Gate 3** — Ishan + professor review the route list | ⏳ **waiting** ([PHASE1_RESULTS.md](PHASE1_RESULTS.md)) |
 | 2 Google ground truth | ✅ **2,016/2,016 done** (0 errors), processed; results in PHASE2_RESULTS.md · 🛑 grouping decision D-49 |
-| 3 / 3b LLM queries | ✅ live tests passed on prepay (grounding, 3.8-flash A and B) · ❌ gemini-2.5-flash unavailable (D-51) · **pipeline not started — awaiting Ishan's go** |
-| 4 Metrics · 5 Charts + narrative | not started |
+| 3 LLM queries (gemini-3.8-flash) | ✅ grounding 64/64 · condition A 2,016/2,016 + consistency 560/560 · cost $1.83 — PHASE3_RESULTS.md |
+| 3b condition B | 🔒 1 test call only; full run needs Ishan's approval (+ small top-up) |
+| 4 Metrics · 5 Charts | ⏭️ next (offline) |
 
 API usage so far: 1 free Places test call + 72 Places Text Search calls (inside the 5,000/month free cap). No Routes or Gemini calls in v2 yet.
 
