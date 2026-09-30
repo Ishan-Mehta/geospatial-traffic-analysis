@@ -12,7 +12,7 @@ Definitions of tags/thresholds: [METHODOLOGY.md](METHODOLOGY.md).
 | `kind` | metro_station, junction (compact) · bus_station, rail_station, hospital, tech_park, mall, campus, landmark |
 | `expected_area` | Locality expected in Google's formatted address (check `area_ok`) |
 | `zone` | Central / North / East / South / West (coverage plots only) |
-| `approx_lat`, `approx_lng` | Claude's approximate coordinate — **check + rehearsal only, never sent to APIs or used in results** (D-15) |
+| `rough_lat`, `rough_lng` | Claude's approximate coordinate — **check + rehearsal only, never sent to APIs or used in results** (D-15) |
 | `notes` | Known risks (large site, flyover, uncertain approx, rename) |
 
 ## landmarks_geocoded.csv / landmarks_review.csv — `1b_build_od_pairs.py geocode`

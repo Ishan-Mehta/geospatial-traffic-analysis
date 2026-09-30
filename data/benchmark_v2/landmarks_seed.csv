@@ -1,4 +1,4 @@
-landmark_id,llm_name,search_query,kind,expected_area,zone,approx_lat,approx_lng,notes
+landmark_id,llm_name,search_query,kind,expected_area,zone,rough_lat,rough_lng,notes
 L01,MG Road Metro Station,"MG Road Metro Station, Mahatma Gandhi Road, Bengaluru",metro_station,MG Road,Central,12.9755,77.6068,
 L02,Kempegowda Bus Station (Majestic),"Kempegowda Bus Station, Majestic, Gandhi Nagar, Bengaluru",bus_station,Gandhi Nagar,Central,12.9776,77.5724,large site
 L03,Town Hall,"Bengaluru Town Hall, JC Road, Bengaluru",landmark,J C Road,Central,12.9636,77.5857,
@@ -12,7 +12,7 @@ L10,Mekhri Circle,"Mekhri Circle, Bellary Road, Bengaluru",junction,Mekhri,Centr
 L11,Bengaluru Cantonment Railway Station,"Bengaluru Cantonment Railway Station, Bengaluru",rail_station,Cantonment,Central,12.9938,77.5979,
 L12,Vidhana Soudha,"Vidhana Soudha, Ambedkar Veedhi, Bengaluru",landmark,Ambedkar Veedhi,Central,12.9796,77.5907,
 L13,Halasuru Metro Station,"Halasuru Metro Station, Old Madras Road, Bengaluru",metro_station,Halasuru,Central,12.9760,77.6265,
-L14,Hebbal Flyover,"Hebbal Flyover, Bellary Road, Hebbal, Bengaluru",junction,Hebbal,North,13.0358,77.5970,flyover: point may land on the elevated deck
+L14,Esteem Mall Hebbal,"Esteem Mall, Bellary Road, Hebbal, Bengaluru",mall,Hebbal,North,13.0440,77.5920,replaces Hebbal Flyover (elevated deck); rough coordinate uncertain
 L15,Yeshwanthpur Metro Station,"Yeshwanthpur Metro Station, Tumkur Road, Bengaluru",metro_station,Yeshwanthpur,North,13.0230,77.5497,
 L16,Jalahalli Cross,"Jalahalli Cross, Tumkur Road, Bengaluru",junction,Jalahalli,North,13.0430,77.5195,
 L17,Peenya Metro Station,"Peenya Metro Station, Tumkur Road, Peenya, Bengaluru",metro_station,Peenya,North,13.0330,77.5330,
@@ -21,8 +21,8 @@ L19,IISc Main Gate,"Indian Institute of Science Main Gate, CV Raman Road, Bengal
 L20,Manyata Tech Park,"Manyata Embassy Business Park, Nagawara, Bengaluru",tech_park,Nagawara,North,13.0457,77.6206,large site
 L21,MS Ramaiah Hospital,"Ramaiah Memorial Hospital, New BEL Road, MSR Nagar, Bengaluru",hospital,MSR Nagar,North,13.0306,77.5680,
 L22,Hennur Cross,"Hennur Cross, Hennur Main Road, Kalyan Nagar, Bengaluru",junction,Hennur,North,13.0270,77.6390,
-L23,Yelahanka Railway Station,"Yelahanka Junction Railway Station, Bengaluru",rail_station,Yelahanka,North,13.1000,77.5970,approx coordinate uncertain
-L24,BEL Circle,"BEL Circle, Ring Road, Jalahalli, Bengaluru",junction,BEL,North,13.0440,77.5540,approx coordinate uncertain
+L23,Yelahanka Railway Station,"Yelahanka Junction Railway Station, Bengaluru",rail_station,Yelahanka,North,13.1043,77.5919,rough coordinate uncertain
+L24,BEL Circle,"BEL Circle, Ring Road, Jalahalli, Bengaluru",junction,BEL,North,13.0440,77.5540,rough coordinate uncertain
 L25,Rajajinagar Metro Station,"Rajajinagar Metro Station, Dr Rajkumar Road, Bengaluru",metro_station,Rajajinagar,West,12.9981,77.5495,
 L26,Mantri Square Mall,"Mantri Square Mall, Sampige Road, Malleshwaram, Bengaluru",mall,Malleshwaram,Central,12.9915,77.5709,
 L27,ISKCON Temple Rajajinagar,"ISKCON Temple, Chord Road, Rajajinagar, Bengaluru",landmark,Rajajinagar,West,13.0098,77.5511,
@@ -37,13 +37,13 @@ L35,Whitefield (Kadugodi) Metro Station,"Whitefield (Kadugodi) Metro Station, Be
 L36,Hoodi Metro Station,"Hoodi Metro Station, Whitefield Main Road, Bengaluru",metro_station,Hoodi,East,12.9890,77.7140,
 L37,Phoenix Marketcity,"Phoenix Marketcity Mall, Whitefield Main Road, Mahadevapura, Bengaluru",mall,Mahadevapura,East,12.9972,77.6961,large site
 L38,Manipal Hospital Old Airport Road,"Manipal Hospital, HAL Old Airport Road, Bengaluru",hospital,Old Airport Road,East,12.9585,77.6486,
-L39,Domlur Flyover,"Domlur Flyover, Old Airport Road, Domlur, Bengaluru",junction,Domlur,East,12.9610,77.6388,flyover: point may land on the elevated deck
+L39,Embassy GolfLinks Business Park,"Embassy GolfLinks Business Park, Intermediate Ring Road, Domlur, Bengaluru",tech_park,Domlur,East,12.9540,77.6440,replaces Domlur Flyover (elevated deck); large site; rough coordinate uncertain
 L40,Bagmane Tech Park,"Bagmane Tech Park, CV Raman Nagar, Bengaluru",tech_park,C V Raman Nagar,East,12.9812,77.6614,large site
-L41,Kundalahalli Gate,"Kundalahalli Gate Junction, ITPL Main Road, Bengaluru",junction,Kundalahalli,East,12.9657,77.7157,approx coordinate uncertain
+L41,Kundalahalli Gate,"Kundalahalli Gate Junction, ITPL Main Road, Bengaluru",junction,Kundalahalli,East,12.9657,77.7157,rough coordinate uncertain
 L42,Hope Farm Junction,"Hope Farm Junction, Whitefield, Bengaluru",junction,Whitefield,East,12.9845,77.7523,
 L43,Iblur Junction,"Iblur Junction, Outer Ring Road, Bellandur, Bengaluru",junction,Bellandur,East,12.9240,77.6620,
 L44,RMZ Ecospace,"RMZ Ecospace Business Park, Bellandur, Bengaluru",tech_park,Bellandur,East,12.9270,77.6810,large site
-L45,Carmelaram Railway Station,"Carmelaram Railway Station, Sarjapur Road, Bengaluru",rail_station,Carmelaram,East,12.9080,77.7050,approx coordinate uncertain
+L45,Carmelaram Railway Station,"Carmelaram Railway Station, Sarjapur Road, Bengaluru",rail_station,Carmelaram,East,12.9080,77.7050,rough coordinate uncertain
 L46,Silk Board Junction,"Central Silk Board Junction, Hosur Road, Bengaluru",junction,BTM,South,12.9172,77.6233,
 L47,Sony World Junction,"Sony World Junction, Koramangala, Bengaluru",junction,Koramangala,South,12.9370,77.6268,
 L48,Forum Mall Koramangala,"Nexus Koramangala (Forum Mall), Hosur Road, Koramangala, Bengaluru",mall,Koramangala,South,12.9346,77.6113,renamed Nexus Koramangala in 2023: name check may flag
@@ -64,8 +64,8 @@ L62,Vijayanagar Metro Station,"Vijayanagar Metro Station, Magadi Road, Bengaluru
 L63,Mysore Road Metro Station,"Mysore Road Metro Station, Mysore Road, Bengaluru",metro_station,Mysore Road,West,12.9465,77.5301,
 L64,Kengeri Bus Terminal,"Kengeri TTMC Bus Terminal, Mysore Road, Kengeri, Bengaluru",bus_station,Kengeri,West,12.9150,77.4870,
 L65,RV College of Engineering,"RV College of Engineering, Mysore Road, RV Vidyanikethan Post, Bengaluru",campus,Mysore Road,West,12.9237,77.4987,large campus
-L66,Nagarbhavi Circle,"Nagarbhavi Circle, Nagarbhavi, Bengaluru",junction,Nagarbhavi,West,12.9605,77.5095,approx coordinate uncertain
+L66,Nagarbhavi Circle,"Nagarbhavi Circle, Nagarbhavi, Bengaluru",junction,Nagarbhavi,West,12.9605,77.5095,rough coordinate uncertain
 L67,Magadi Road Metro Station,"Magadi Road Metro Station, Magadi Road, Bengaluru",metro_station,Magadi Road,West,12.9757,77.5553,
-L68,Sumanahalli Junction,"Sumanahalli Junction, Outer Ring Road, Bengaluru",junction,Sumanahalli,West,12.9900,77.5165,approx coordinate uncertain
+L68,Sumanahalli Junction,"Sumanahalli Junction, Outer Ring Road, Bengaluru",junction,Sumanahalli,West,12.9900,77.5165,rough coordinate uncertain
 L69,Deepanjali Nagar Metro Station,"Deepanjali Nagar Metro Station, Mysore Road, Bengaluru",metro_station,Deepanjali Nagar,West,12.9519,77.5372,
 L70,Rajarajeshwari Nagar Metro Station,"Rajarajeshwari Nagar Metro Station, Mysore Road, Bengaluru",metro_station,Rajarajeshwari Nagar,West,12.9366,77.5197,
