@@ -36,7 +36,9 @@ Details live in the linked docs; this page only collects the warnings.
 
 ## 3. What the LLM numbers mean
 - Condition A = **lowest thinking level** (`LOW` on gemini-3.8-flash), **not "no thinking"** — Gemini 3.x cannot disable
-  thinking. Thought tokens are logged per answer; report them. (D-26)
+  thinking. Thought tokens are logged per answer; at LOW the API reported none in the live test (field empty), at HIGH
+  ~920 per call. Report them. (D-26, D-50)
+- gemini-2.5-flash is **not available** to our key (404, D-51).
 - v2 prompt/schema differ slightly from the v1 pilot: clock time appended ("Evening Rush (18:00)", D-38) and one-line
   field descriptions (D-39). **v1 pilot answers are not directly comparable** with v2.
 - Each call is independent (stateless); queries run in a shuffled order; `model_version` is logged — check it did not

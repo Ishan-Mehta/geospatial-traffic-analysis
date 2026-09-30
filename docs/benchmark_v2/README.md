@@ -27,7 +27,7 @@ Branch: `benchmark-v2` · v1 snapshot: commit `0df60ba` on `main` · outputs: `d
 | 1b Routes: candidates → tags → selection | ✅ **72 routes, 4 in each of 18 groups** |
 | **Gate 3** — Ishan + professor review the route list | ⏳ **waiting** ([PHASE1_RESULTS.md](PHASE1_RESULTS.md)) |
 | 2 Google ground truth | ✅ **2,016/2,016 done** (0 errors), processed; results in PHASE2_RESULTS.md · 🛑 grouping decision D-49 |
-| 3 / 3b LLM queries | 🧪 code ready; live test showed postpay rejected → **waiting for Gemini prepay** |
+| 3 / 3b LLM queries | ✅ live tests passed on prepay (grounding, 3.8-flash A and B) · ❌ gemini-2.5-flash unavailable (D-51) · **pipeline not started — awaiting Ishan's go** |
 | 4 Metrics · 5 Charts + narrative | not started |
 
 API usage so far: 1 free Places test call + 72 Places Text Search calls (inside the 5,000/month free cap). No Routes or Gemini calls in v2 yet.

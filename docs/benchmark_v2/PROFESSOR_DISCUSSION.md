@@ -25,7 +25,10 @@ and to **Gemini** with the same origin/destination. All code is built and tested
 | Q9 | Agree with the **metrics** and the headline metric (time-of-day sensitivity)? | approval |
 | Q10 | **Next scope** after the baseline: context ablation (condition C), other LLMs, MapmyIndia — which first? | priorities |
 | Q11 | Present v1 as a **"pilot / lessons learned"** section? | yes / no |
-| Q12 | **Budget** ≈ $6 without thinking, ≈ $30 with thinking — OK? | approval |
+| Q12 | **Budget** (measured): ≈ $2 without thinking, ≈ $10 with thinking — OK? | approval |
+| Q13 | Routes **changed group** once Google's real paths were used (48 of 72): keep the 72 routes and analyse with continuous measures (current choice), re-split, or add sub-arterial routes? | decision |
+| Q14 | Google's "no-traffic" time is really **historical-traffic** time → we measure traffic with a *traffic index* (route's time ÷ its own fastest time). Acceptable? | approval |
+| Q15 | gemini-2.5-flash is not available to our key — second model: none, gemini-3.5-flash, or gemini-3.5-flash-lite? | decision |
 
 **Time constraint:** for the week 5–11 Oct, all Google queries must be sent **before Mon 5 Oct, 07:30 IST**. If Q1/Q4
 cannot be settled by then, the reference week moves to 26 Oct–1 Nov (no other impact).
@@ -135,3 +138,35 @@ Per query, LLM vs Google for the same route/day/time:
 | gemini-2.5-flash, condition A | 2,016 | ≈ $1.9 |
 | gemini-3.8-flash, condition B (thinking) | 2,016 | ≈ $19 (thinking tokens uncertain) |
 | **Total** | | **≈ $6 without B · ≈ $25 with B** |
+
+*Update after live tests (2026-10-01):* measured tokens are much lower than estimated — gemini-3.8-flash condition A
+(+ consistency) ≈ **$1.8**, grounding ≈ $0.04, condition B ≈ **$8.5**. gemini-2.5-flash unavailable (Q15).
+
+### Q13. Routes changed group after Google (plain explanation)
+- Every route has 3 labels used to group results: **length band**, **road type** (how much of the route is on main roads)
+  and **hotspot exposure** (how much runs on the most unpredictable roads from our 7-day data).
+- To *choose* the 72 routes before calling Google, we estimated each route's path with OpenStreetMap's **shortest-distance**
+  path and labelled it from that. After the Google run we know the path Google actually recommends and re-labelled.
+- Google recommends the **fastest** path, which in Bangalore usually means main roads even if slightly longer. So many
+  routes that looked "sub-arterial" on the shortest path are "arterial" on Google's path (median main-road share 0.50 → 0.65;
+  routes ~8 % longer). 48 of 72 routes changed at least one label; the groups are now unbalanced:
+  arterial 43 · mixed 17 · sub-arterial 12 (only 2 long sub-arterial routes); high/low exposure 49 / 23.
+- **Why it matters:** the midsem hypothesis compares arterial vs sub-arterial performance; with 12 sub-arterial routes that
+  comparison is weaker than planned.
+- **Options:** (A, current) keep the routes and use the main-road share and hotspot share as *continuous* measures
+  (correlate LLM error with them) plus coarse groups (arterial 43 vs non-arterial 29) · (B) re-define groups relative to
+  Google's values (thirds / halves) — balanced but "sub-arterial" would include routes up to ~54 % main road · (C) add
+  ~12 new routes that stay sub-arterial on Google (a few extra Google + LLM calls, cheap).
+- This itself is a finding: *the shortest path and the fastest path use different road classes in Bangalore*.
+
+### Q14. Traffic measure
+- Google returns `duration` (predicted, with traffic) and `staticDuration`, which Google defines as the ETA from **historical**
+  traffic only — not an empty-road time. At night and at 08:00 the predicted time is *below* staticDuration, so
+  duration ÷ staticDuration is not a congestion measure (this also explains the negative Stage-4 congestion ratios).
+- Instead: **traffic index** = a query's duration ÷ the same route's fastest duration over its 28 queries. Median values:
+  weekday 18:00 ≈ 1.6, 14:00 ≈ 1.35, 08:00 ≈ 1.2, 23:00 ≈ 1.05 (full table in PHASE2_RESULTS.md).
+
+### Q15. Second model
+gemini-2.5-flash returned "model not found" for our key. Options: no second model; **gemini-3.5-flash** (the v1 pilot model,
+older 3.x generation, ≈ $3 for condition A); **gemini-3.5-flash-lite** (smaller/cheaper, ≈ $1; availability to be tested).
+Longer term, GPT / Claude would give a cross-provider comparison (adapters ready as stubs).

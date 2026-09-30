@@ -230,11 +230,12 @@ V2_LLM_MODELS = {
         "temperature": 1.0,
         "conditions": {"A": {"thinking_level": "LOW"}, "B": {"thinking_level": "HIGH"}},
         "price_in_per_m": 0.75, "price_out_per_m": 3.75,
-        "est_tokens": {"A": (220, 350), "B": (220, 2500)},
+        # measured in live tests 2026-10-01 (R-30): A 147 in / 147 out, thought none; B 147 in / 125 out + 918 thought
+        "est_tokens": {"A": (150, 160), "B": (150, 1100)},
         "min_interval_s": 0.5,
     },
     # Second model (D-42): older generation, cheap, and thinking CAN be fully disabled (thinking_budget 0).
-    # B = dynamic thinking (budget -1). v1 notes said 2.5-flash returned 404 for new users -> the test call verifies.
+    # B = dynamic thinking (budget -1). LIVE TEST 2026-10-01: 404 "model not found" for our key -> NOT USABLE (D-51).
     "gemini_25_flash": {
         "provider": "gemini", "model_name": "gemini-2.5-flash", "api_key_env": "GEMINI_API_KEY",
         "temperature": 1.0,
