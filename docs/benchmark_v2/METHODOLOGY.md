@@ -78,5 +78,32 @@ Decisions and their reasons are in [DECISIONS.md](DECISIONS.md).
   coordinate **and** the locality shares no word with Google's address/expected area (rule `coords_and_locality`, D-34); routes with a misplaced endpoint are *flagged* (reported separately), not removed (D-34).
 - **valid_numbers**: estimated distance and time both numeric and > 0.
 
-## 7. Planned metrics (Phase 4, detail filled in then)
-Log-ratio ln(llm/google) for distance and time; absolute error; over/under direction; medians. Time-of-day sensitivity (LLM peak/night ratio vs Google's). Traffic awareness (Spearman: LLM label vs Google traffic index). Road validity (LLM road names fuzzy-matching OSM names). Road overlap (Jaccard LLM roads vs the map-matched Google road sequence). Repeat spread (consistency subset). Naive baseline: straight line × 1.22 detour at a per-slot typical speed. All broken down by band, road type, hotspot exposure (final tags), slot, day; grounding-flagged routes reported separately.
+## 7. Phase 4 metrics (implemented in `5_compare_results_v2.py`)
+Join key (route, day, slot); one row per query × LLM sample; headline numbers use sample 0 (2,016 rows).
+1. **Distance / time accuracy:** ratio = LLM ÷ Google (Google = primary route `distance_m`, `duration_s`); log ratio
+   ln(LLM/Google) (symmetric: over- and under-estimation weigh equally); absolute error (km, min); absolute % error;
+   over-estimation share. Medians throughout. Time is also compared with Google's staticDuration (reference only).
+2. **Uncertainty:** 95 % CI of the median via **route-level cluster bootstrap** (resample routes, 2,000 reps, seed fixed):
+   the 28 queries of one route are not independent. Group differences: two-sided **permutation test** on medians of
+   per-route values (5,000 permutations).
+3. **Time-of-day sensitivity (headline):** per route, weekday peak ÷ night = mean(08:00, 18:00 times) ÷ mean(23:00 time),
+   for LLM and Google; compared by log difference and by Spearman across routes. Within-route Spearman between the LLM's
+   and Google's 28 times. Profile: each time ÷ the route's weekday-night time, median per slot/day type.
+4. **Traffic awareness:** Spearman between the LLM label (none 0 … heavy 3) and Google's traffic index (duration ÷ route's
+   fastest of 28, D-48); overall, within each slot, and within route.
+5. **Road names** (D-55, D-56): normalisation (lower-case, apostrophes removed, brackets dropped, Rd→Road, ORR→Outer Ring
+   Road, NH n→National Highway n, aliases e.g. MG Road = Mahatma Gandhi Road, CMH, OTC, KG Road); reference list of real
+   roads = OSM drive-graph names ∪ all road names in Google's step instructions ∪ BBMP road list; fuzzy score = max(token-set
+   ratio, space-insensitive character ratio), **match ≥ 85**; generic names ("12th Main Road", "Service Road") count only
+   on exact match. **Validity** = share of the LLM's named roads matching the reference (lower bound). **Overlap** with the
+   query's Google roads (map-matched OSM names ∪ step names): greedy fuzzy matching → Jaccard, recall (share of Google's
+   roads named by the LLM), precision (share of LLM roads on Google's route).
+6. **Consistency** (280 queries × 3 samples): coefficient of variation of distance and time; share with identical traffic
+   label; mean pairwise Jaccard of road lists; max ÷ min time.
+7. **Breakdowns:** final Google tags (band, road type, hotspot exposure), slot, day type, Saturday (holiday) vs Sunday;
+   continuous route-level Spearman with arterial share, hotspot share and length; **length-controlled** checks (routes
+   ≥ 5 km; within-band correlations) because short routes have larger errors and hold half the sub-arterial routes.
+8. **Naive baseline** (D-57): distance = straight line × 1.22 (median OSM detour of Phase-1 candidates, not Google);
+   speed = median Stage-2 speed (April scrape, plausible legs ≥ 1 km, snapshots within ±90 min of the slot, weekday /
+   weekend); time = distance ÷ speed. Uses exact coordinates (information advantage over the LLM).
+9. **Grounding:** routes with a misplaced landmark are flagged (none were).

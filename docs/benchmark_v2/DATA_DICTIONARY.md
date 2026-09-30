@@ -92,6 +92,21 @@ The 10 routes that get 2 extra condition-A samples: `route_id`, names, `band`, `
 | `<model>_A.jsonl`, `<model>_B.jsonl` | per query × sample: `route_id, day, slot_id, slot_label, sample_idx, origin/dest id+name, prompt`, `parsed_response {suggested_route, estimated_distance_km, estimated_time_minutes, traffic_awareness, reasoning}`, `raw_response`, `valid_numbers` + metadata |
 Run metadata on every LLM record: `kind, condition, model_key, provider, model_name, model_version, settings {temperature, thinking_level}, system_prompt_sha1, status, attempts, prompt_tokens, output_tokens, thought_tokens, latency_s, error, error_kind, mock, query_timestamp`.
 
+## results/ — Phase 4 (`5_compare_results_v2.py`)
+| File | Content | Git |
+|---|---|---|
+| `comparison_<model>_<cond>.csv` | one row per query × sample: LLM km/min/label/roads, Google km/min/static/traffic index, tags, `lr_dist`, `lr_time`, abs/% errors, over flags, baseline estimates + `lr_*_base`, `llm_beats_base_*`, road `validity_share`, `jaccard_roads`, `recall_roads`, `precision_roads`, `calendar_note` | ignored |
+| `route_metrics_<model>_<cond>.csv` | per route: tags, median errors, validity/overlap means, `pn_llm`, `pn_google`, `pn_log_diff`, `within_route_rho_time`, `label_rho` | ignored |
+| `road_name_matches_<model>.csv` | each distinct normalised LLM road name → best reference name, score, kind (exact/fuzzy/generic/no_candidate) | ignored |
+| `summary_overall.csv` | headline numbers (time-of-day, labels, baseline, road names) | committed |
+| `summary_by_group.csv` | per group: ratios with 95 % CIs, % errors, over shares, label ρ, road metrics, baseline win shares | committed |
+| `summary_group_tests.csv` / `summary_length_controlled.csv` | permutation tests; length-controlled checks | committed |
+| `summary_continuous.csv` | route-level Spearman with arterial share, hotspot share, length | committed |
+| `summary_time_of_day.csv` / `summary_traffic_labels.csv` | profiles by slot/day type; label vs traffic index | committed |
+| `summary_consistency.csv` / `summary_baseline_speeds.csv` | 3-sample spread; Stage-2 speeds used by the baseline | committed |
+| `phase4_run.log` | console output of the final run | committed |
+| `../figures/phase4/r01…r11` | see PHASE4_RESULTS §6 | committed |
+
 ## mock/ — git-ignored
 Same structure as `gmaps/`, `llm/`, `figures/` but produced with `--mock` (fake answers). Pipeline tests only, never results.
 
