@@ -1,0 +1,61 @@
+Loaded: 2016 Google queries, 2576 LLM answers ({0: 2016, 1: 280, 2: 280})
+Joined rows: 2576 (all endpoints OK: True)
+Baseline: detour 1.220; Stage-2 speeds km/h AM_PEAK 21.1, AM_PEAK-we 22.8, MID_DAY 19.0, MID_DAY-we 18.6, PM_PEAK 16.3, PM_PEAK-we 16.9, NIGHT 25.0, NIGHT-we 24.4
+Reference road names: OSM 3,053 + Google steps 338 + BBMP 404 = 3,528 distinct (graph loaded 18s)
+Road names: 1017 distinct normalised names; matched 83%
+
+=== OVERALL ===
+model                                     gemini_38_flash
+condition                                               A
+n_queries                                            2016
+n_routes                                               72
+time_of_day_pn_llm_median                           2.152
+time_of_day_pn_google_median                        1.335
+time_of_day_pn_log_diff_median                      0.468
+time_of_day_pn_rho_across_routes                   -0.245
+within_route_time_rho_median                        0.732
+within_route_label_rho_median                         0.7
+label_spearman_all                                  0.632
+llm_vs_google_static_time_ratio_median              1.173
+baseline_detour                                      1.22
+baseline_time_ratio_median                           0.91
+baseline_dist_ratio_median                          0.915
+baseline_abs_lr_time_median                         0.169
+llm_abs_lr_time_median                              0.211
+baseline_abs_lr_dist_median                         0.101
+llm_abs_lr_dist_median                              0.126
+road_names_distinct                                  1017
+road_names_matched_share                             0.83
+grounding_flagged_routes                                0
+thought_tokens_reported                                28
+
+=== BY GROUP (sample 0) ===
+                        group  n_routes  dist_ratio_median  time_ratio_median  time_ape_median  label_spearman  road_validity_mean  road_jaccard_mean  llm_beats_baseline_time
+                          ALL        72              1.063              1.116            0.208           0.632               0.950              0.187                    0.441
+         band_google=B1_1-5km        17              1.132              1.222            0.338           0.540               0.948              0.184                    0.655
+        band_google=B2_5-12km        27              1.035              1.127            0.204           0.644               0.951              0.217                    0.425
+       band_google=B3_12-25km        28              1.078              1.071            0.166           0.685               0.950              0.161                    0.328
+    road_type_google=arterial        43              1.054              1.118            0.193           0.633               0.957              0.205                    0.404
+       road_type_google=mixed        17              1.075              1.088            0.233           0.634               0.951              0.196                    0.412
+road_type_google=sub_arterial        12              1.148              1.154            0.240           0.632               0.926              0.114                    0.616
+ hotspot_exposure_google=high        49              1.054              1.091            0.202           0.618               0.948              0.199                    0.459
+  hotspot_exposure_google=low        23              1.152              1.165            0.243           0.685               0.955              0.163                    0.404
+                 slot=AM_PEAK        72              1.075              1.424            0.428           0.663               0.948              0.192                    0.300
+                 slot=MID_DAY        72              1.054              0.985            0.136           0.169               0.949              0.188                    0.597
+                   slot=NIGHT        72              1.063              0.868            0.148           0.032               0.959              0.187                    0.510
+                 slot=PM_PEAK        72              1.066              1.312            0.320           0.472               0.945              0.183                    0.359
+             day_type=weekday        72              1.065              1.165            0.231           0.568               0.950              0.187                    0.425
+             day_type=weekend        72              1.061              1.024            0.178           0.707               0.951              0.189                    0.483
+    Saturday (holiday 10 Oct)        72              1.064              1.061            0.206           0.628               0.953              0.184                    0.427
+                       Sunday        72              1.055              0.997            0.157           0.729               0.950              0.193                    0.538
+
+=== CONSISTENCY ===
+n_queries_with_3_samples              280.0000
+cv_distance_median                      0.0267
+cv_time_median                          0.0382
+label_identical_share                   0.9610
+roads_jaccard_between_samples_mean      0.5000
+time_max_over_min_median                1.0900
+error_time_abs_lr_median_main           0.2110
+
+Done in 24s -> /private/tmp/claude-501/-Users-ishanmehta-Desktop-Projects-Geospatial-MMI/4005ff3b-d93d-4a07-a5a1-d922a04865a4/scratchpad/run/data/benchmark_v2/results and /private/tmp/claude-501/-Users-ishanmehta-Desktop-Projects-Geospatial-MMI/4005ff3b-d93d-4a07-a5a1-d922a04865a4/scratchpad/run/data/benchmark_v2/figures/phase4

@@ -30,7 +30,12 @@ and to **Gemini** with the same origin/destination. All code is built and tested
 | Q14 | Google's "no-traffic" time is really **historical-traffic** time → we measure traffic with a *traffic index* (route's time ÷ its own fastest time). Acceptable? | approval |
 | Q15 | gemini-2.5-flash is not available to our key — second model: none, gemini-3.5-flash, or gemini-3.5-flash-lite? | decision |
 
-**Time constraint:** for the week 5–11 Oct, all Google queries must be sent **before Mon 5 Oct, 07:30 IST**. If Q1/Q4
+**Results so far (condition A, gemini-3.8-flash):** distances close (+6 %), times biased by time of day (+42 % at 08:00,
+−13 % at night); the LLM knows *when* traffic is bad but exaggerates rush hour ~1.6× and applies it uniformly to all routes;
+it knows main corridors but only 22 % of Google's roads; a straight-line rule of thumb is about as accurate. Details:
+[FINDINGS_AND_INTERPRETATION.md](FINDINGS_AND_INTERPRETATION.md).
+
+**Time constraint (resolved — Google run done 1 Oct):** for the week 5–11 Oct, all Google queries must be sent **before Mon 5 Oct, 07:30 IST**. If Q1/Q4
 cannot be settled by then, the reference week moves to 26 Oct–1 Nov (no other impact).
 
 ---

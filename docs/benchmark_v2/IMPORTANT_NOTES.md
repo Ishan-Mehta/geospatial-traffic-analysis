@@ -49,6 +49,15 @@ Details live in the linked docs; this page only collects the warnings.
   change mid-run. (D-35)
 - Grounding-flagged routes (LLM misplaces a landmark by > 2 km) are **flagged, not removed** — report separately. (D-34)
 
+## 3b. Reading the Phase 4 results
+- Road **validity (95 %) is a lower bound** — some unmatched names are real roads missing from the reference lists.
+- The **naive baseline knows exact coordinates**; the LLM only names. "Baseline beats LLM" ≠ "LLM is useless".
+- LLM traffic labels are driven mainly by the time slot (within-slot ρ ≈ 0.03–0.66); don't present ρ = 0.63 as route-level knowledge.
+- The arterial vs sub-arterial difference in distance/time **disappears once route length is controlled**; the road-overlap
+  difference remains. Report both (PHASE4_RESULTS §4).
+- Phase 4 was computed from a scratch copy outside iCloud (D-54) with identical package versions; rerunning
+  `5_compare_results_v2.py` in the project venv reproduces it once iCloud is idle.
+
 ## 4. Labels and groups
 - Final tags come from **Google's most frequent path** (Phase 2); Phase-1 tags were provisional (OSM). Report how many
   routes changed group. (D-28)

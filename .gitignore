@@ -89,3 +89,8 @@ data/benchmark/llm_responses/
 data/benchmark/test/
 data/benchmark/benchmark_routes.csv
 data/benchmark/benchmark_routes_geocoded.csv
+# Phase 4 per-query / per-route tables contain Google + LLM data (D-43); aggregate summary_*.csv are committed
+!data/benchmark_v2/results/
+data/benchmark_v2/results/comparison_*.csv
+data/benchmark_v2/results/route_metrics_*.csv
+data/benchmark_v2/results/road_name_matches_*.csv

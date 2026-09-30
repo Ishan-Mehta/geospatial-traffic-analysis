@@ -8,6 +8,8 @@ Branch: `benchmark-v2` · v1 snapshot: commit `0df60ba` on `main` · outputs: `d
 | [PROFESSOR_DISCUSSION.md](PROFESSOR_DISCUSSION.md) | **Questions for the professor** (summary first, details after) |
 | [IMPORTANT_NOTES.md](IMPORTANT_NOTES.md) | ⚠️ **Read first** — data-use/compliance, what the numbers mean, caveats for the report |
 | [PHASE1_RESULTS.md](PHASE1_RESULTS.md) | **The 72-route list + Phase 1 summary** (for Ishan / professor) |
+| [FINDINGS_AND_INTERPRETATION.md](FINDINGS_AND_INTERPRETATION.md) | ⭐ **What the study found and what it means** (for the report) |
+| [PHASE4_RESULTS.md](PHASE4_RESULTS.md) | **LLM vs Google comparison — all numbers and plots** |
 | [PHASE3_RESULTS.md](PHASE3_RESULTS.md) | **LLM results so far** (grounding, condition A, consistency, cost, first comparison) |
 | [PHASE2_RESULTS.md](PHASE2_RESULTS.md) | **Google ground-truth results** (2,016 queries) |
 | [IO_SPEC.md](IO_SPEC.md) | **Exact prompts, request configs, output formats, and the LLM↔Google comparison row** |
@@ -30,7 +32,8 @@ Branch: `benchmark-v2` · v1 snapshot: commit `0df60ba` on `main` · outputs: `d
 | 2 Google ground truth | ✅ **2,016/2,016 done** (0 errors), processed; results in PHASE2_RESULTS.md · 🛑 grouping decision D-49 |
 | 3 LLM queries (gemini-3.8-flash) | ✅ grounding 64/64 · condition A 2,016/2,016 + consistency 560/560 · cost $1.83 — PHASE3_RESULTS.md |
 | 3b condition B | 🔒 1 test call only; full run needs Ishan's approval (+ small top-up) |
-| 4 Metrics · 5 Charts | ⏭️ next (offline) |
+| 4 Metrics | ✅ done (condition A) — PHASE4_RESULTS.md, FINDINGS_AND_INTERPRETATION.md |
+| 5 Report charts + narrative | ⏭️ next (offline) |
 
 API usage so far: 1 free Places test call + 72 Places Text Search calls (inside the 5,000/month free cap). No Routes or Gemini calls in v2 yet.
 
@@ -48,7 +51,8 @@ API usage so far: 1 free Places test call + 72 Places Text Search calls (inside 
 | Offline rehearsal (approximate coords, not results) | `data/benchmark_v2/rehearsal_approx/` |
 | Consistency-subset routes (10) | `data/benchmark_v2/consistency_routes.csv` |
 | Phase-2 outputs (after the real run) | `data/benchmark_v2/gmaps/` (+ `figures/phase2/`) |
-| Phase-3 outputs (after the real run) | `data/benchmark_v2/llm/` |
+| Phase-3 outputs | `data/benchmark_v2/llm/` |
+| Phase-4 outputs | `data/benchmark_v2/results/` (summaries committed) + `figures/phase4/` |
 | ⚠️ Git policy | Google/LLM-generated files are git-ignored (D-43) — back them up separately |
 | Mock test outputs (git-ignored, not results) | `data/benchmark_v2/mock/` |
 | Config (all thresholds) | `src/llm_benchmark/config.py` → section `V2` |
@@ -70,6 +74,7 @@ API usage so far: 1 free Places test call + 72 Places Text Search calls (inside 
 | `python 4_query_gmaps_v2.py [--limit N]` | Google predicted-traffic queries (28 per route) | **Yes** (Routes Pro) |
 | `python 4b_process_gmaps_v2.py` | Offline: endpoints check, map-matching, final tags, plots | No |
 | `python 3_query_llm_v2.py select-consistency` · `grounding-eval` · `status` | Offline helpers | No |
+| `python 5_compare_results_v2.py [--model KEY --condition A]` | Phase 4 comparison, tables, plots | No |
 | `python 3_query_llm_v2.py grounding [--dry-run\|--limit N]` | Where-is-landmark check | **Yes** (Gemini) |
 | `python 3_query_llm_v2.py benchmark --condition A\|B [--part main\|consistency\|all] [--dry-run\|--limit N] [--workers 4]` | Benchmark queries (parallel option) | **Yes** (Gemini) |
 | any of the above with `--mock` | Offline fake answers into `data/benchmark_v2/mock/` | No |

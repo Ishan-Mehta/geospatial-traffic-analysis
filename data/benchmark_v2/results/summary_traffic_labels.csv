@@ -1,0 +1,5 @@
+llm_label,n,traffic_index_median,traffic_index_q25,traffic_index_q75
+none,4,1.038,1.008,1.09
+light,596,1.056,1.018,1.142
+moderate,639,1.32,1.227,1.43
+heavy,777,1.441,1.212,1.651
