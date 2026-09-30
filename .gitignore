@@ -10,6 +10,10 @@
 data/raw/*.json
 data/raw/*.csv
 !data/raw/.gitkeep
+data/raw/gmaps_data/
+
+# OSMnx HTTP cache (large, re-downloadable)
+src/analysis/cache/
 
 # ===========================
 # Generated Outputs
