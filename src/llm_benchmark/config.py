@@ -207,7 +207,7 @@ V2_REFERENCE_MONDAY = "2026-10-05"                     # pinned (D-37). Google r
 # Calendar notes for the reference week — tagged on every query of that date and reported separately (D-37)
 V2_CALENDAR_NOTES = {
     "2026-10-10": "Mahalaya Amavasya (Karnataka public holiday)",
-    "2026-10-11": "Navaratri begins / Mysuru Dasara inauguration (festival, not a public holiday)",
+    # Sun 11 Oct (Navaratri begins) deliberately NOT tagged: kept as a normal weekend day (Ishan, D-37)
 }
 V2_SHUFFLE_SEED = "benchmark-v2"                       # queries are sent in a reproducible shuffled order (D-35)
 
@@ -232,6 +232,16 @@ V2_LLM_MODELS = {
         "est_tokens": {"A": (220, 350), "B": (220, 2500)},
         "min_interval_s": 0.5,
     },
+    # Second model (D-42): older generation, cheap, and thinking CAN be fully disabled (thinking_budget 0).
+    # B = dynamic thinking (budget -1). v1 notes said 2.5-flash returned 404 for new users -> the test call verifies.
+    "gemini_25_flash": {
+        "provider": "gemini", "model_name": "gemini-2.5-flash", "api_key_env": "GEMINI_API_KEY",
+        "temperature": 1.0,
+        "conditions": {"A": {"thinking_budget": 0}, "B": {"thinking_budget": -1}},
+        "price_in_per_m": 0.30, "price_out_per_m": 2.50,
+        "est_tokens": {"A": (220, 350), "B": (220, 2500)},
+        "min_interval_s": 0.5,
+    },
     # v1 pilot model, kept for reference / optional comparison
     "gemini_35_flash": {
         "provider": "gemini", "model_name": "gemini-3.5-flash", "api_key_env": "GEMINI_API_KEY",
@@ -252,4 +262,5 @@ V2_LLM_MODELS = {
     },
 }
 V2_LLM_MAX_ATTEMPTS = 5
-V2_GROUNDING_MAX_M = 2000                              # LLM places a landmark > 2 km from Google's point -> misplaced
+V2_GROUNDING_MAX_M = 2000                              # LLM point > 2 km from Google's point = 'far'
+V2_GROUNDING_RULE = "coords_and_locality"             # misplaced if far AND locality not in Google address; or "coords_only" (D-34)

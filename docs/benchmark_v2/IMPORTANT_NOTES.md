@@ -15,14 +15,20 @@ Details live in the linked docs; this page only collects the warnings.
   **names**, and methodology — not bulk raw Google responses or Google coordinates. Cite Google Maps Platform (Routes API,
   predicted traffic) as the ground-truth source.
 - **Ask the professor** (and, if needed, the institution) before sharing the dataset or making the repo public.
+- **Git policy (D-43):** Google- and LLM-generated data is git-ignored and never committed. The GitHub repo is **public**;
+  earlier local (unpushed) commits on `main`/`benchmark-v2` still contain some of that data → **rewrite history or make the
+  repo private before any push.** Already public since earlier pushes: `data/processed/geocoded_*.csv` (Google geocoding
+  coordinates) and `data/sample_response.json` (a Google Routes response) — decision pending with the professor.
+- **Backup:** because this data is not in git, keep a separate local/cloud copy of `data/benchmark_v2/` (re-creating it
+  would cost API calls).
 - After the project, consider deleting/refreshing stored Google content in line with the terms.
 
 ## 2. What the Google numbers mean
 - Ground truth = **predicted typical traffic** for future departure times (`TRAFFIC_AWARE_OPTIMAL`, `trafficModel BEST_GUESS`),
   **not live traffic**. Say "Google's predicted travel time" in the report. (D-08, D-27)
-- Reference week: **Mon 5 – Sun 11 Oct 2026**. **Sat 10 Oct = Mahalaya Amavasya (public holiday)**; **Sun 11 Oct = Navaratri
-  begins / Mysuru Dasara inauguration**. The LLM is told only the weekday, so it assumes a *typical* Saturday/Sunday.
-  → Report weekend results **with and without** these days (column `calendar_note`). (D-37)
+- Reference week: **Mon 5 – Sun 11 Oct 2026**. **Sat 10 Oct = Mahalaya Amavasya (public holiday)** — tagged in
+  `calendar_note`; the LLM is told only "Saturday", so report Saturday results **with and without** it. Sun 11 Oct
+  (Navaratri begins) is deliberately not tagged — kept as a normal weekend day. (D-37)
 - Deadline: all Google queries must be sent **before Mon 5 Oct 2026, 07:30 IST**; otherwise switch to the week of Mon 26 Oct.
 
 ## 3. What the LLM numbers mean

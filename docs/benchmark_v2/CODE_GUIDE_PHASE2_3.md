@@ -120,5 +120,5 @@ Mock outputs: `data/benchmark_v2/mock/` (git-ignored, regenerable). They are **n
 
 ## 7. Decisions
 Decided 2026-10-01: OPTIMAL routing (D-27) · most-frequent-path tags (D-28) · A = `LOW`, B = `HIGH` on gemini-3.8-flash (D-26, D-36) ·
-endpoint tolerance (D-29) · shuffled order (D-35). Still open: reference week (D-37), professor-level prompt/schema
-tweaks (IO_SPEC §6.1), grounding flag rule, optional gemini-2.5-flash comparison, Batch API.
+endpoint tolerance (D-29) · shuffled order (D-35). Later the same day: reference week 5–11 Oct, Saturday tagged only (D-37) · clock time in prompt (D-38) · schema descriptions (D-39) ·
+gemini-2.5-flash added (D-42) · grounding rule coords AND locality (D-34) · no Google/LLM data in git (D-43). Open: Batch API; professor items in PROFESSOR_DISCUSSION.md.

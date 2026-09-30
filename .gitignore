@@ -73,3 +73,19 @@ Thumbs.db
 # Archives
 # ===========================
 *.zip
+
+# v2: never commit Google- or LLM-generated data (terms of use + size) — D-43. Kept locally only.
+data/benchmark_v2/cache/
+data/benchmark_v2/gmaps/
+data/benchmark_v2/llm/
+data/benchmark_v2/rehearsal_approx/
+data/benchmark_v2/landmarks_geocoded.csv
+data/benchmark_v2/landmarks_review.csv
+data/benchmark_v2/candidate_pairs.csv
+data/benchmark_v2/od_pairs.csv
+data/benchmark_v2/od_pairs.geojson
+data/benchmark_v2/hotspot_legs.geojson
+data/benchmark/llm_responses/
+data/benchmark/test/
+data/benchmark/benchmark_routes.csv
+data/benchmark/benchmark_routes_geocoded.csv

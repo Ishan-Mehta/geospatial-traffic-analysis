@@ -5,6 +5,7 @@ Branch: `benchmark-v2` · v1 snapshot: commit `0df60ba` on `main` · outputs: `d
 ## Read in this order
 | Doc | What it holds (single source of truth for…) |
 |---|---|
+| [PROFESSOR_DISCUSSION.md](PROFESSOR_DISCUSSION.md) | **Questions for the professor** (summary first, details after) |
 | [IMPORTANT_NOTES.md](IMPORTANT_NOTES.md) | ⚠️ **Read first** — data-use/compliance, what the numbers mean, caveats for the report |
 | [PHASE1_RESULTS.md](PHASE1_RESULTS.md) | **The 72-route list + Phase 1 summary** (for Ishan / professor) |
 | [IO_SPEC.md](IO_SPEC.md) | **Exact prompts, request configs, output formats, and the LLM↔Google comparison row** |
@@ -45,6 +46,7 @@ API usage so far: 1 free Places test call + 72 Places Text Search calls (inside 
 | Consistency-subset routes (10) | `data/benchmark_v2/consistency_routes.csv` |
 | Phase-2 outputs (after the real run) | `data/benchmark_v2/gmaps/` (+ `figures/phase2/`) |
 | Phase-3 outputs (after the real run) | `data/benchmark_v2/llm/` |
+| ⚠️ Git policy | Google/LLM-generated files are git-ignored (D-43) — back them up separately |
 | Mock test outputs (git-ignored, not results) | `data/benchmark_v2/mock/` |
 | Config (all thresholds) | `src/llm_benchmark/config.py` → section `V2` |
 | Phase-1 script | `src/llm_benchmark/1b_build_od_pairs.py` |
@@ -72,11 +74,13 @@ API usage so far: 1 free Places test call + 72 Places Text Search calls (inside 
 ## Next steps (in order; 🛑 = Ishan decides / approves)
 **🛑 Gate 3 — route list review** (Ishan + professor, using PHASE1_RESULTS.md). Changes → edit seed/decisions, rerun `pairs` (free).
 
-**Decided 2026-10-01:** OPTIMAL routing (D-27), most-frequent-path tags (D-28), thinking A=LOW/B=HIGH (D-26), shuffled order (D-35), gemini-3.8-flash (D-36), endpoint tolerance (D-29), reference week 5–11 Oct with holiday tags (D-37), clock time in prompt (D-38), schema descriptions (D-39), no extra field (D-40).
+**Decided 2026-10-01:** OPTIMAL routing (D-27), most-frequent-path tags (D-28), thinking A=LOW/B=HIGH (D-26), shuffled order (D-35), gemini-3.8-flash (D-36), endpoint tolerance (D-29), reference week 5–11 Oct with Saturday holiday tag (D-37), clock time in prompt (D-38), schema descriptions (D-39), no extra field (D-40), gemini-2.5-flash as second model (D-42), grounding rule coords AND locality (D-34), no Google/LLM data in git (D-43).
 
 **⏰ Deadline:** the Google run must finish **before Mon 5 Oct 2026, 07:30 IST** (else week of 26 Oct).
 
-**🛑 Still open:** grounding flag rule (coords AND locality?) · optional gemini-2.5-flash comparison · Batch API (Ishan: maybe tomorrow) · push to GitHub · inform professor of D-38/D-39.
+**🛑 Still open:** professor items ([PROFESSOR_DISCUSSION.md](PROFESSOR_DISCUSSION.md)) · Batch API (Ishan: maybe tomorrow) · no push for now (history contains Google data; repo is public).
+
+**First live tests (≈ 7 paid calls, cents; each needs Ishan's go):** (1) Google `--limit 1` → inspect raw JSON; (2) `4b` on it (offline) → check endpoints, road sequence; (3) Gemini: `grounding --limit 1`, `benchmark --condition A --limit 1` for gemini_38_flash and gemini_25_flash, `--condition B --limit 1` for gemini_38_flash (measures thinking tokens) → inspect answers, model versions, token counts; (4) re-estimate costs from the real token counts.
 
 **Phase 2 — Google ground truth** (code ready)
 1. **🛑** `4_query_gmaps_v2.py --limit 1` — one real query, shown to Ishan (≈ $0).

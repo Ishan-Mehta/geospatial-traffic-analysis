@@ -53,7 +53,7 @@ Decisions and their reasons are in [DECISIONS.md](DECISIONS.md).
 ## 5. Phase 2 — Google ground truth
 - **Query**: Google Routes `computeRoutes`, origin/destination = landmark Google coordinates, no via points,
   `TRAFFIC_AWARE_OPTIMAL` + `trafficModel BEST_GUESS`, future `departureTime` = slot time on that weekday of one fixed
-  **reference week** (pinned Mon 5 – Sun 11 Oct 2026, D-37; stored in `gmaps/run_manifest.json`; `calendar_note` tags Sat 10 Oct holiday and Sun 11 Oct Navaratri). Semantics: **predicted typical
+  **reference week** (pinned Mon 5 – Sun 11 Oct 2026, D-37; stored in `gmaps/run_manifest.json`; `calendar_note` tags the Sat 10 Oct public holiday; Sun 11 Oct deliberately untagged). Semantics: **predicted typical
   traffic**, not live. Up to 3 routes returned; the **primary route = routes[0]** is the ground truth; alternatives are stored.
 - **Congestion ratio** = duration / staticDuration of the primary route (≥ 1 means slower than free-flow).
 - **Endpoint check**: distance between Google's leg start/end and our coordinate ≤ max(150 m, landmark `snap_m` + 100 m) (D-29).
@@ -67,12 +67,12 @@ Decisions and their reasons are in [DECISIONS.md](DECISIONS.md).
 
 ## 6. Phase 3 — LLM queries
 - **Benchmark prompt**: v1 wording (D-13) with the clock time appended to the slot label, e.g. "Evening Rush (18:00)" (D-38); schema = v1 fields + one-line descriptions (D-39); origin/destination = `llm_name`; weekday name. Exact text: [IO_SPEC.md](IO_SPEC.md).
-- **Conditions**: A = lowest thinking the model allows (Gemini 3.x: `thinking_level=MINIMAL`; thinking cannot be fully
-  disabled), B = `HIGH`; temperature 1.0 explicit; thought tokens logged per answer (D-26).
+- **Conditions**: A = lowest thinking the model allows (gemini-3.8-flash `thinking_level=LOW` — Gemini 3.x cannot fully
+  disable thinking; gemini-2.5-flash `thinking_budget=0` = off), B = high (`HIGH` / dynamic `-1`); temperature 1.0 explicit; thought tokens logged per answer (D-26).
 - **Samples**: 1 per query; consistency subset = 10 routes (`consistency_routes.csv`, balanced greedy pick) × 2 extra
   condition-A samples (sample_idx 1, 2).
-- **Grounding check**: separate prompt "Where exactly is <landmark>?" → lat/lng; **misplaced** if > 2 km from the Google
-  coordinate; routes with a misplaced endpoint are *flagged* (reported separately), not removed (D-34).
+- **Grounding check**: separate prompt "Where exactly is <landmark>?" → locality + lat/lng; **misplaced** if > 2 km from the Google
+  coordinate **and** the locality shares no word with Google's address/expected area (rule `coords_and_locality`, D-34); routes with a misplaced endpoint are *flagged* (reported separately), not removed (D-34).
 - **valid_numbers**: estimated distance and time both numeric and > 0.
 
 ## 7. Planned metrics (Phase 4, detail filled in then)
