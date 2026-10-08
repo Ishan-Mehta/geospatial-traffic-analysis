@@ -6,6 +6,7 @@ Branch: `benchmark-v2` · v1 snapshot: commit `0df60ba` on `main` · outputs: `d
 | Doc | What it holds (single source of truth for…) |
 |---|---|
 | [PROFESSOR_DISCUSSION.md](PROFESSOR_DISCUSSION.md) | **Questions for the professor** (summary first, details after) |
+| [GITHUB_PUSH_PLAN.md](GITHUB_PUSH_PLAN.md) | Plan for the public-repo data issue and a safe push (not executed) |
 | [IMPORTANT_NOTES.md](IMPORTANT_NOTES.md) | ⚠️ **Read first** — data-use/compliance, what the numbers mean, caveats for the report |
 | [PHASE1_RESULTS.md](PHASE1_RESULTS.md) | **The 72-route list + Phase 1 summary** (for Ishan / professor) |
 | [FINDINGS_AND_INTERPRETATION.md](FINDINGS_AND_INTERPRETATION.md) | ⭐ **What the study found and what it means** (for the report) |
