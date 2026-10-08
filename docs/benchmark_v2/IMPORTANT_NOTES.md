@@ -25,6 +25,9 @@ Details live in the linked docs; this page only collects the warnings.
 - **iCloud stalls:** the project (2.3 GB incl. venv, raw data, OSM graph) is synced by iCloud Desktop sync. If a script sits at
   0 % CPU for minutes, iCloud is syncing (R-36) — wait, or pause iCloud sync while running long jobs. A `.nosync` folder
   rename was tried and reverted (the app's file viewer cannot follow the symlink, D-53).
+- **Backups:** `~/Backups/Geospatial_MMI/` (outside iCloud) — data tarballs + full git bundle, see its manifest (R-42).
+- **iCloud can corrupt `.git`:** conflict copies like `refs/heads/benchmark-v2 2` appeared (R-43). If git says "bad object …
+  2", look for "* 2" files in `.git` and move them out. Pushing to a remote / keeping `.git` out of iCloud prevents this.
 - After the project, consider deleting/refreshing stored Google content in line with the terms.
 
 ## 2. What the Google numbers mean

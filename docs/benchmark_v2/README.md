@@ -31,7 +31,8 @@ Branch: `benchmark-v2` · v1 snapshot: commit `0df60ba` on `main` · outputs: `d
 | **Gate 3** — Ishan + professor review the route list | ⏳ **waiting** ([PHASE1_RESULTS.md](PHASE1_RESULTS.md)) |
 | 2 Google ground truth | ✅ **2,016/2,016 done** (0 errors), processed; results in PHASE2_RESULTS.md · 🛑 grouping decision D-49 |
 | 3 LLM queries (gemini-3.8-flash) | ✅ grounding 64/64 · condition A 2,016/2,016 + consistency 560/560 · cost $1.83 — PHASE3_RESULTS.md |
-| 3b condition B | 🔒 1 test call only; full run needs Ishan's approval (+ small top-up) |
+| 3b condition B / C | ⏸️ deferred to next round, to agree with professor (D-60); B = 1 test call so far |
+| ChatGPT model | ⏳ awaiting model/key from professor; OpenAI adapter stub ready (D-61) |
 | 4 Metrics | ✅ done (condition A) — PHASE4_RESULTS.md, FINDINGS_AND_INTERPRETATION.md |
 | 5 Report charts + narrative | ⏭️ next (offline) |
 
