@@ -90,7 +90,8 @@ The LLM gets the landmark's **name**; Google gets the same landmark's **coordina
   **leave them**. Unpushed commits contain Google/LLM data in older commits. Ishan is OK with cleaning them **only if the
   commit history is kept**. A rewrite with `git filter-repo` keeps every commit (messages, dates, order); only the data
   files disappear from them and the commit IDs change. Awaiting his go.
-- **Task 1 (urgent): a 1–2 page update for Prof. Naik**, in a light, easy tone, as a Google Doc (Claude builds a
+- **Task 1 — DRAFT READY (R-44):** `docs/benchmark_v2/report/Professor_Update_Oct2026.docx` (2 pages; rebuild with
+  `node report/build_update_docx.js <out.docx> report/figures`, needs `npm install docx`). Original brief: **a 1–2 page update for Prof. Naik**, in a light, easy tone, as a Google Doc (Claude builds a
   `.docx` → Ishan uploads it to Google Drive → opens in Google Docs → exports PDF). Title "Benchmarking LLMs against
   Navigation tools", by Ishan Mehta, for Prof. Vinayak Naik. Mention v1 briefly. Claude chooses the figures (Ishan hasn't
   read the findings yet and wants them explained later).
