@@ -85,9 +85,10 @@ The LLM gets the landmark's **name**; Google gets the same landmark's **coordina
   the manifest, and the moved iCloud conflict copies.
 
 ## 8. Where things stand (2026-10-09)
-- Done: Phases 0–4 for condition A; all docs; backups. Last commit `c3c2c87` on `benchmark-v2`; **nothing pushed**.
+- Done: Phases 0–4 for condition A; all docs; backups. **History cleaned 2026-10-09 (D-62, R-45)** — commit IDs changed;
+  docs quote some *old* IDs → see `COMMIT_ID_MAP.md`. **Nothing pushed yet**; Ishan reviews the history, then we push.
 - **GitHub (GITHUB_PUSH_PLAN.md):** already-public files (2 geocoded CSVs + `sample_response.json`): Ishan says
-  **leave them**. Unpushed commits contain Google/LLM data in older commits. Ishan is OK with cleaning them **only if the
+  **leave them**. Unpushed history now **cleaned** (D-62) — next: Ishan checks history → push `main` + `benchmark-v2`. Unpushed commits contain Google/LLM data in older commits. Ishan is OK with cleaning them **only if the
   commit history is kept**. A rewrite with `git filter-repo` keeps every commit (messages, dates, order); only the data
   files disappear from them and the commit IDs change. Awaiting his go.
 - **Task 1 — DRAFT READY (R-44):** `docs/benchmark_v2/report/Professor_Update_Oct2026.docx` (2 pages; rebuild with
