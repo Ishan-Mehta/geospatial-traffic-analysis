@@ -5,6 +5,7 @@ Branch: `benchmark-v2` · v1 snapshot: commit `0df60ba` on `main` · outputs: `d
 ## Read in this order
 | Doc | What it holds (single source of truth for…) |
 |---|---|
+| [SESSION_CONTEXT.md](SESSION_CONTEXT.md) | 🧭 **Full context of the work so far, in plain words** (start here in a new session) |
 | [PROFESSOR_DISCUSSION.md](PROFESSOR_DISCUSSION.md) | **Questions for the professor** (summary first, details after) |
 | [GITHUB_PUSH_PLAN.md](GITHUB_PUSH_PLAN.md) | Plan for the public-repo data issue and a safe push (not executed) |
 | [IMPORTANT_NOTES.md](IMPORTANT_NOTES.md) | ⚠️ **Read first** — data-use/compliance, what the numbers mean, caveats for the report |
