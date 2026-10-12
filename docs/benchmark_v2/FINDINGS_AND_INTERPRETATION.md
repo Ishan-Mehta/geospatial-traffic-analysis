@@ -93,8 +93,10 @@ Additional finding for the report: **the shortest path and the fastest path use 
    context (C) and other LLMs may differ.
 2. **Ground truth is Google's *predicted* traffic** for one week (5–11 Oct 2026, incl. the Sat 10 Oct holiday), not live
    traffic; Google itself is a model.
-3. **Time-slot labels:** "Morning Rush (08:00)" may prime the LLM towards rush-hour estimates; the clock time was added to
-   reduce this, but the label remains (professor's prompt).
+3. **Prompt priming:** the system prompt says *"Bangalore has heavy peak-hour traffic"* and the slot labels say
+   "Morning/Evening Rush". Both likely push the LLM towards rush-hour estimates (F3): on weekdays its traffic label is
+   fully determined by the slot (08:00 92 % heavy, 14:00 100 % moderate, 18:00 100 % heavy, 23:00 100 % light). The
+   clock time was added to the label, but the wording is the professor's. A neutral-prompt round is planned (D-64).
 4. **Road-name matching is fuzzy**; the reference lists are incomplete (validity is a lower bound); road lists vary between
    samples, so single-answer overlap scores are noisy.
 5. **Group sizes:** only 12 sub-arterial routes (Google's fastest routes are mostly arterial; routes were selected on

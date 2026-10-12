@@ -216,7 +216,7 @@ V2_CONSISTENCY_N_ROUTES = 10
 V2_CONSISTENCY_EXTRA_SAMPLES = 2                       # sample_idx 1 and 2 (condition A only)
 V2_ACTIVE_LLM = "gemini_38_flash"                     # D-36
 # Each model: provider adapter in llm_clients.py, per-condition generation settings, prices (USD / 1M tokens)
-# Gemini 3.x cannot fully disable thinking: condition A uses the lowest level (MINIMAL) and every
+# Gemini 3.x cannot fully disable thinking: condition A uses the lowest level (LOW for 3.8) and every
 # record logs the thought-token count (D-26).
 V2_LLM_MODELS = {
     # Main model (D-36). Docs list thinking levels low/medium/high for 3.8/3.7 Flash -> A = LOW (lowest), B = HIGH.
