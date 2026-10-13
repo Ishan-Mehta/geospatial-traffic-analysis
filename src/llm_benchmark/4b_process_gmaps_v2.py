@@ -244,8 +244,11 @@ def make_plots(q: pd.DataFrame, r: pd.DataFrame, fig_dir):
     try:
         # q6 route-choice stability
         fig, ax = plt.subplots(figsize=(7, 4))
-        ax.hist(r.n_distinct_paths, bins=range(1, int(r.n_distinct_paths.max()) + 2), align="left", color="#90be6d")
-        ax.set_xlabel("distinct Google paths over the 28 queries")
+        counts = r.n_distinct_paths.value_counts().sort_index()          # whole numbers: bars, not a histogram
+        bars = ax.bar(counts.index.astype(str), counts.values, color="#90be6d", width=0.6)
+        ax.bar_label(bars, labels=[f"{v} routes" for v in counts.values])
+        ax.set_ylim(0, counts.max() * 1.15)
+        ax.set_xlabel("number of different paths Google used across a route's 28 queries")
         ax.set_ylabel("routes")
         ax.set_title("q6 — Does Google change its path with time of day?")
         fig.savefig(fig_dir / "q6_path_stability.png", dpi=150, bbox_inches="tight")
