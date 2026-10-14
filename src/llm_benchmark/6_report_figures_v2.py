@@ -8,6 +8,7 @@ Step 6 (v2) — report figures for the professor update (Phase 5). Offline, NO A
   fig_E_distance_time.png   every query: Gemini vs Google distance and time (log axes)
   fig_F_traffic_labels.png  Gemini's weekday traffic label by time of day, with Google's traffic index
   fig_G_google_heatmap.png  Google's traffic index by day and time of day
+  fig_H_where_worst.png     typical miss by trip length; main vs smaller roads on trips >= 5 km
 
 Inputs: gmaps/gmaps_responses.jsonl, od_pairs.csv, results/comparison_<model>_A.csv, the OSM graph (basemap).
 Output: docs/benchmark_v2/report/figures/. Colours: dataviz reference palette slots 1–2 (validated, CVD-safe).
@@ -255,10 +256,49 @@ def fig_google_heatmap(out, plt):
     return piv.round(2)
 
 
+def fig_where_worst(out, plt, model):
+    """Route-level medians: typical miss = exp(median |log ratio|) - 1, then the median over routes in the group."""
+    r = pd.read_csv(C.V2_DIR / "results" / f"route_metrics_{model}_A.csv")
+    pct = lambda col: np.exp(col) - 1
+    fig, axes = plt.subplots(1, 2, figsize=(8.8, 3.6), gridspec_kw={"width_ratios": [1, 1.25]})
+    ax = axes[0]
+    x = np.arange(3)
+    by = r.groupby("band").agg(dist=("med_abs_lr_dist", "median"), time=("med_abs_lr_time", "median")).reindex(list(BANDS))
+    for off, col, colr, lab in ((-0.19, "time", GEMINI, "time miss"), (0.19, "dist", "#f4ae8c", "distance miss")):
+        bars = ax.bar(x + off, pct(by[col]).values, 0.36, color=colr, zorder=2, label=lab)
+        ax.bar_label(bars, labels=[f"{v:.0%}" for v in pct(by[col]).values], fontsize=9, color=INK2, padding=2)
+    ax.set_xticks(x, [f"{BANDS[b]}\n({(r.band == b).sum()} trips)" for b in BANDS])
+    ax.set_yticks([0, 0.2, 0.4], ["0%", "20%", "40%"])
+    ax.set_ylim(0, 0.5)
+    ax.legend(frameon=False, fontsize=9, loc="upper right")
+    _finish(ax, "Typical miss by trip length")
+    ax = axes[1]
+    s5 = r[r.band != "B1_1-5km"]
+    a, sb = s5[s5.road_type == "arterial"], s5[s5.road_type == "sub_arterial"]
+    vals = {"distance miss": (pct(a.med_abs_lr_dist.median()), pct(sb.med_abs_lr_dist.median())),
+            "time miss": (pct(a.med_abs_lr_time.median()), pct(sb.med_abs_lr_time.median())),
+            "Google’s roads\nthat Gemini names": (a.recall.median(), sb.recall.median())}
+    x = np.arange(3)
+    for k, (off, colr, lab) in enumerate(((-0.19, GEMINI, f"main-road trips ({len(a)})"),
+                                          (0.19, "#f4ae8c", f"smaller-road trips ({len(sb)})"))):
+        v = [vals[m][k] for m in vals]
+        bars = ax.bar(x + off, v, 0.36, color=colr, zorder=2, label=lab)
+        ax.bar_label(bars, labels=[f"{vi:.0%}" for vi in v], fontsize=9, color=INK2, padding=2)
+    ax.set_xticks(x, list(vals))
+    ax.set_yticks([0, 0.2, 0.4], ["0%", "20%", "40%"])
+    ax.set_ylim(0, 0.5)
+    ax.legend(frameon=False, fontsize=9, loc="upper left")
+    _finish(ax, "Trips of 5 km or more: main vs smaller roads")
+    fig.tight_layout()
+    fig.savefig(out / "fig_H_where_worst.png", dpi=200, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+    return by.pipe(pct).round(3), {m: tuple(round(float(x_), 3) for x_ in v) for m, v in vals.items()}
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--model", default=C.V2_ACTIVE_LLM)
-    ap.add_argument("--only", default="A,B,C,D,E,F,G", help="comma list of figure letters (A needs osmnx)")
+    ap.add_argument("--only", default="A,B,C,D,E,F,G,H", help="comma list of figure letters (A needs osmnx)")
     args = ap.parse_args()
     which = set(args.only.upper().split(","))
     import matplotlib
@@ -281,6 +321,8 @@ def main():
         print(sh.to_string()); print(gi.to_dict())
     if "G" in which:
         print(fig_google_heatmap(out, plt).to_string())
+    if "H" in which:
+        print(fig_where_worst(out, plt, args.model))
     if "A" in which:
         fig_routes_map(out, plt)
     print(f"Figures -> {out}")
