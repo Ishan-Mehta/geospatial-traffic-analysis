@@ -124,6 +124,71 @@ def _status_from_text(text: str):
 
 
 # =====================================================================
+#  OpenAI (official Responses API; ready, waiting for an API key and model name in config)
+# =====================================================================
+OPENAI_URL = "https://api.openai.com/v1/responses"
+
+
+def openai_schema(node):
+    """Same schema in OpenAI's strict form: lowercase types and additionalProperties false. Wording is unchanged."""
+    if isinstance(node, list):
+        return [openai_schema(x) for x in node]
+    if not isinstance(node, dict):
+        return node
+    out = {}
+    for k, v in node.items():
+        if k == "type" and isinstance(v, str):
+            out[k] = v.lower()
+        elif k == "properties":
+            out[k] = {name: openai_schema(prop) for name, prop in v.items()}
+        else:
+            out[k] = openai_schema(v)
+    if out.get("type") == "object":
+        out["additionalProperties"] = False
+    return out
+
+
+def openai_body(cfg, system_prompt, user_prompt, schema, condition) -> dict:
+    body = {"model": cfg["model_name"], "instructions": system_prompt, "input": user_prompt, "store": False,
+            "text": {"format": {"type": "json_schema", "name": "answer", "strict": True,
+                                "schema": openai_schema(schema)}}}
+    effort = cfg["conditions"][condition].get("reasoning_effort")
+    if effort:
+        body["reasoning"] = {"effort": effort}
+    if cfg.get("send_temperature", True):
+        body["temperature"] = cfg["temperature"]
+    return body
+
+
+def _openai(cfg, system_prompt, user_prompt, schema, condition) -> LLMResult:
+    import requests
+    if not cfg["model_name"]:
+        return LLMResult(error="OpenAI model name not set in config.V2_LLM_MODELS['openai_main']", error_kind="fatal")
+    body = openai_body(cfg, system_prompt, user_prompt, schema, condition)
+    settings = {k: body[k] for k in ("model", "temperature", "reasoning") if k in body}
+    headers = {"Authorization": f"Bearer {load_env_key(cfg['api_key_env'])}", "Content-Type": "application/json"}
+    try:
+        r = requests.post(OPENAI_URL, headers=headers, json=body, timeout=300)
+    except requests.RequestException as e:
+        return LLMResult(error=f"network error: {type(e).__name__}", error_kind="retryable", settings=settings)
+    if r.status_code != 200:
+        kind = "fatal" if is_fatal_error(r.status_code, r.text) or r.status_code == 400 else "retryable"
+        return LLMResult(error=friendly_api_error(r.status_code, r.text), error_kind=kind, settings=settings)
+    data = r.json()
+    if data.get("status") not in (None, "completed"):
+        return LLMResult(error=f"incomplete answer: {data.get('incomplete_details')}", error_kind="bad_output",
+                         settings=settings)
+    text = "".join(c.get("text", "") for item in data.get("output", []) if item.get("type") == "message"
+                   for c in item.get("content", []) if c.get("type") == "output_text")
+    parsed, perr = _parse_json(text)
+    um = data.get("usage") or {}
+    return LLMResult(parsed=parsed, raw_text=text, model_version=data.get("model"),
+                     prompt_tokens=um.get("input_tokens"), output_tokens=um.get("output_tokens"),
+                     thought_tokens=(um.get("output_tokens_details") or {}).get("reasoning_tokens"),
+                     error=perr, error_kind="bad_output" if perr else None, settings=settings)
+
+
+# =====================================================================
 #  Mock (offline tests only — deterministic, with injected failures)
 # =====================================================================
 _mock_calls = itertools.count()
@@ -142,9 +207,13 @@ def _mock(cfg, system_prompt, user_prompt, schema, condition) -> LLMResult:
     else:                                                    # benchmark schema
         slot_mult = 1.8 if "Rush" in user_prompt else (1.0 if "Night" in user_prompt else 1.3)
         dist = round(3 + base * 18, 1)
-        parsed = {"suggested_route": ["Mock Main Road", "Outer Ring Road"],
+        roads = ["Mock Main Road", "Outer Ring Road"]
+        minutes = round(dist * 2.2 * slot_mult)
+        by_road = props.get("suggested_route", {}).get("items", {}).get("type") == "OBJECT"
+        parsed = {"suggested_route": [{"road_name": n, "distance_km": dist / 2, "time_minutes": minutes / 2}
+                                      for n in roads] if by_road else roads,
                   "estimated_distance_km": dist,
-                  "estimated_time_minutes": round(dist * 2.2 * slot_mult),
+                  "estimated_time_minutes": minutes,
                   "traffic_awareness": "heavy" if slot_mult > 1.5 else ("light" if slot_mult == 1.0 else "moderate"),
                   "reasoning": "mock answer for pipeline testing"}
     text = json.dumps(parsed)
@@ -167,5 +236,5 @@ def _not_implemented(name):
 _ADAPTERS = {
     "gemini": _gemini,
     "mock": _mock,
-    "openai": _not_implemented("OpenAI"),
+    "openai": _openai,
 }

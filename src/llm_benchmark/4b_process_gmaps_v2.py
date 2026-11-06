@@ -20,37 +20,19 @@ Usage: python 4b_process_gmaps_v2.py [--mock]
 """
 
 import argparse
-import re
 
 import numpy as np
 import pandas as pd
 
 import config as C
 from v2_common import (OsmNetwork, band_of, basemap, haversine_m, load_hotspot_union, read_jsonl,
-                       road_type_of, sha1_short)
+                       road_type_of, sha1_short, step_roads)
 
 PEAKS = ("AM_PEAK", "PM_PEAK")
-_STEP_ROAD = re.compile(r"\b(?:onto|on|follow)\s+(.+?)(?:\s+toward\b|\s+Pass\b|\s+Destination\b|\n|$)")
 
 
 def base_dir(mock: bool):
     return C.V2_MOCK_DIR if mock else C.V2_DIR
-
-
-def step_roads(steps: list) -> list:
-    """Ordered road names mentioned in Google's turn-by-turn instructions ('Turn left onto X')."""
-    names = []
-    for s in steps:
-        text = re.sub(r"\([^)]*\)", "", str(s.get("instruction", "")))     # drop "(on the right)" etc.
-        for line in text.split("\n"):
-            if line.strip().lower().startswith(("pass by", "destination")):
-                continue
-            m = _STEP_ROAD.search(line)
-            if m:
-                n = m.group(1).strip().rstrip(".")
-                if n and not n.lower().startswith("the ") and (not names or names[-1] != n):
-                    names.append(n)
-    return names
 
 
 def latest_ok(records: list) -> dict:

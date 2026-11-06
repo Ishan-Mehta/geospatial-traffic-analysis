@@ -296,3 +296,73 @@ def basemap(ax, net):
     ax.set_aspect(1 / math.cos(math.radians(12.97)))
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
+
+
+# =====================================================================
+#  Google turn-by-turn steps -> road names and sub-routes
+# =====================================================================
+_STEP_ROAD = re.compile(r"\b(?:onto|on|follow)\s+(.+?)(?:\s+toward\b|\s+Pass\b|\s+Destination\b|\n|$)")
+
+
+def step_roads(steps: list) -> list:
+    """Ordered road names mentioned in Google's turn-by-turn instructions ('Turn left onto X')."""
+    names = []
+    for s in steps:
+        text = re.sub(r"\([^)]*\)", "", str(s.get("instruction", "")))     # drop "(on the right)" etc.
+        for line in text.split("\n"):
+            if line.strip().lower().startswith(("pass by", "destination")):
+                continue
+            m = _STEP_ROAD.search(line)
+            if m:
+                n = m.group(1).strip().rstrip(".")
+                if n and not n.lower().startswith("the ") and (not names or names[-1] != n):
+                    names.append(n)
+    return names
+
+
+def subroute_groups(steps: list) -> list:
+    """Group consecutive steps on the same named road into sub-routes. Steps without a road name stay with
+    the previous road; stretches under V2_SUBROUTE_MIN_M, and the shortest ones beyond the intermediate-waypoint
+    cap, are merged into a neighbour."""
+    groups = []
+    for s in steps:
+        names = step_roads([s])
+        name = names[0] if names else None
+        if groups and (name is None or name == groups[-1]["road"]):
+            g = groups[-1]
+        elif groups and groups[-1]["road"] is None:
+            g = groups[-1]
+            g["road"] = name
+        else:
+            g = {"road": name, "distance_m": 0, "static_duration_s": 0, "start": s.get("start"), "end": None}
+            groups.append(g)
+        g["distance_m"] += s.get("distance_m", 0)
+        g["static_duration_s"] += s.get("static_s", 0)
+        g["end"] = s.get("end")
+
+    def combine(a):
+        """Join groups a and a + 1; the combined stretch keeps the longer stretch's road name."""
+        ga, gb = groups[a], groups[a + 1]
+        long_, short = (ga, gb) if ga["distance_m"] >= gb["distance_m"] else (gb, ga)
+        groups[a:a + 2] = [{"road": long_["road"] or short["road"], "distance_m": ga["distance_m"] + gb["distance_m"],
+                            "static_duration_s": ga["static_duration_s"] + gb["static_duration_s"],
+                            "start": ga["start"], "end": gb["end"]}]
+
+    while len(groups) > 1:
+        i = min(range(len(groups)), key=lambda k: groups[k]["distance_m"])
+        if groups[i]["distance_m"] >= C.V2_SUBROUTE_MIN_M and len(groups) <= C.V2_SUBROUTE_MAX_INTERMEDIATES + 1:
+            break
+        if i == 0:
+            combine(0)
+        elif i == len(groups) - 1:
+            combine(i - 1)
+        else:
+            combine(i - 1 if groups[i - 1]["distance_m"] <= groups[i + 1]["distance_m"] else i)
+    k = 1
+    while k < len(groups):                              # merging can leave two neighbours with the same road
+        if groups[k]["road"] == groups[k - 1]["road"]:
+            combine(k - 1)
+        else:
+            k += 1
+    return groups
+

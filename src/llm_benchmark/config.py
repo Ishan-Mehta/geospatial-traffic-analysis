@@ -264,3 +264,45 @@ V2_LLM_COOLDOWN_S = 30                                 # on any 429, every worke
 V2_LLM_STOP_AFTER_CONSECUTIVE_ERRORS = 10              # e.g. daily quota reached -> stop, resume later (D-52)
 V2_GROUNDING_MAX_M = 2000                              # LLM point > 2 km from Google's point = 'far'
 V2_GROUNDING_RULE = "coords_and_locality"             # misplaced if far AND locality not in Google address; or "coords_only" (D-34)
+
+
+# =====================================================================
+#  ROUND 2 (docs/round2/ROUND2_PLAN.md) — switched on with BENCHMARK_ROUND=2 in the environment.
+#  Same 72 routes and coordinates; new outputs in data/benchmark_round2/. Without the variable
+#  every setting above stays as it was, so Round 1 files can never be overwritten by a Round 2 run.
+# =====================================================================
+V2_ROUND = os.environ.get("BENCHMARK_ROUND", "1")
+V2_BENCHMARK_SYSTEM_PROMPT_FILE = SYSTEM_PROMPT_FILE
+V2_WEEKEND_BEFORE_MONDAY = False                       # Round 2 week is Sat-Fri: Sat/Sun fall before the reference Monday
+V2_GMAPS_SUBROUTE_RESPONSES_JSONL = "gmaps_subroute_responses.jsonl"
+V2_SUBROUTE_MIN_M = 300                                # a road stretch shorter than this is merged into its neighbour
+V2_SUBROUTE_MAX_INTERMEDIATES = 10                     # at most 11 sub-routes per query
+V2_GMAPS_SUBROUTE_FIELD_MASK = (
+    "routes.duration,routes.staticDuration,routes.distanceMeters,"
+    "routes.legs.distanceMeters,routes.legs.duration,routes.legs.staticDuration,"
+    "routes.legs.startLocation,routes.legs.endLocation"
+)
+V2_LLM_MODELS["openai_main"] = {
+    # Waiting for API access. Set model_name, then "reasoning_effort" to the model's lowest setting and
+    # send_temperature to False if the model refuses a temperature. Fill in the prices for the cost estimate.
+    "provider": "openai", "model_name": None, "api_key_env": "OPENAI_API_KEY",
+    "temperature": 1.0, "send_temperature": True,
+    "conditions": {"A": {"reasoning_effort": None}},
+    "price_in_per_m": 0.0, "price_out_per_m": 0.0,
+    "est_tokens": {"A": (200, 320)},
+    "min_interval_s": 0.5,
+}
+if V2_ROUND == "2":
+    V2_ROUND2_DIR = _PROJECT_ROOT / "data" / "benchmark_round2"
+    V2_GMAPS_DIR = V2_ROUND2_DIR / "gmaps"
+    V2_LLM_DIR = V2_ROUND2_DIR / "llm"
+    V2_MOCK_DIR = V2_ROUND2_DIR / "mock"
+    V2_BENCHMARK_SYSTEM_PROMPT_FILE = _CONFIG_DIR / "prompts" / "system_prompt_neutral.txt"
+    V2_REFERENCE_MONDAY = "2026-11-16"                 # week = Sat 14 - Fri 20 Nov 2026
+    V2_WEEKEND_BEFORE_MONDAY = True
+    V2_CALENDAR_NOTES = {}
+    V2_GMAPS_FIELD_MASK += (",routes.legs.distanceMeters,routes.legs.duration,routes.legs.staticDuration,"
+                            "routes.legs.steps.staticDuration,routes.legs.steps.startLocation,"
+                            "routes.legs.steps.endLocation")
+    V2_LLM_MODELS["gemini_38_flash"]["est_tokens"]["A"] = (200, 320)   # road-by-road answers are longer
+

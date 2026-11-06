@@ -94,3 +94,6 @@ data/benchmark/benchmark_routes_geocoded.csv
 data/benchmark_v2/results/comparison_*.csv
 data/benchmark_v2/results/route_metrics_*.csv
 data/benchmark_v2/results/road_name_matches_*.csv
+
+# Round 2 (Google- and LLM-generated data, D-43)
+data/benchmark_round2/

@@ -58,6 +58,49 @@ ROUTE_SCHEMA = {
     },
 }
 
+# Round 2 answer format (D-68): road-by-road distance and time; no example road names, no mention of traffic in the
+# time fields. Same text for every LLM. Do not edit once the run has started.
+ROUTE_SCHEMA_R2 = {
+    'type': 'OBJECT',
+    'required': ['suggested_route', 'estimated_distance_km', 'estimated_time_minutes', 'traffic_awareness', 'reasoning'],
+    'properties': {
+        'suggested_route': {
+            'type': 'ARRAY',
+            'description': "Ordered list of the roads you would drive on, from origin to destination.",
+            'items': {
+                'type': 'OBJECT',
+                'required': ['road_name', 'distance_km', 'time_minutes'],
+                'properties': {
+                    'road_name': {'type': 'STRING', 'description': "Road name only."},
+                    'distance_km': {'type': 'NUMBER', 'description': "Driving distance on this road in kilometres."},
+                    'time_minutes': {'type': 'NUMBER',
+                                     'description': "Driving time on this road in minutes at the given day and "
+                                                    "time of day."},
+                },
+            },
+        },
+        'estimated_distance_km': {'type': 'NUMBER',
+                                  'description': "Total driving distance of the route in kilometres."},
+        'estimated_time_minutes': {'type': 'NUMBER',
+                                   'description': "Total driving time of the route in minutes at the given day and "
+                                                  "time of day."},
+        'traffic_awareness': {'type': 'STRING', 'enum': ['none', 'light', 'moderate', 'heavy'],
+                              'description': "Expected traffic level along the route at that day and time."},
+        'reasoning': {'type': 'STRING', 'description': "Brief explanation of the route choice and the time estimate."},
+    },
+}
+
+# Round 2 format control: neutral wording without the road-by-road breakdown, on the 10 consistency routes. Separates
+# the effect of neutral wording from the effect of asking for a breakdown when comparing with Round 1.
+ROUTE_SCHEMA_R2_CONTROL = {
+    'type': 'OBJECT',
+    'required': ROUTE_SCHEMA_R2['required'],
+    'properties': {**ROUTE_SCHEMA_R2['properties'],
+                   'suggested_route': {'type': 'ARRAY', 'items': {'type': 'STRING'},
+                                       'description': "Ordered list of the road names you would drive on, from origin "
+                                                      "to destination. Road names only."}},
+}
+
 GROUNDING_SCHEMA = {
     'type': 'OBJECT',
     'required': ['locality', 'latitude', 'longitude', 'confidence'],
@@ -73,12 +116,13 @@ GROUNDING_SCHEMA = {
 def benchmark_prompt(origin: str, destination: str, day: str, slot_label: str, slot_time: str) -> str:
     """v1 wording (3_query_llm.py); only change: the slot's clock time is appended to the label,
     e.g. "Evening Rush (18:00)", so the LLM and Google answer for the same time (D-38)."""
+    time_line = slot_time if C.V2_ROUND == "2" else f"{slot_label} ({slot_time})"    # Round 2: clock time only
     return (
         f"Origin: {origin}\n"
         f"Destination: {destination}\n"
         f"City: Bangalore, India\n"
         f"Day of the week: {day}\n"
-        f"Time of day: {slot_label} ({slot_time})"
+        f"Time of day: {time_line}"
     )
 
 
@@ -125,6 +169,10 @@ def cmd_select_consistency(args):
 def benchmark_items(part: str, condition: str) -> list:
     od = pd.read_csv(C.V2_OD_PAIRS_CSV)
     samples = {0: od.route_id.tolist()}
+    if part == "control":
+        if C.V2_ROUND != "2":
+            sys.exit("--part control exists only for Round 2 (set BENCHMARK_ROUND=2).")
+        samples = {0: pd.read_csv(C.V2_CONSISTENCY_ROUTES_CSV).route_id.tolist()}
     if part in ("consistency", "all"):
         if condition != "A":
             sys.exit("The consistency subset is defined for condition A only (D-09).")
@@ -143,7 +191,8 @@ def benchmark_items(part: str, condition: str) -> list:
             for day in C.V2_DAYS:
                 for slot in C.TIME_SLOTS:
                     items.append({"key": (rid, day, slot["id"], k), "route_id": rid, "day": day,
-                                  "slot_id": slot["id"], "slot_label": slot["label"], "sample_idx": k,
+                                  "slot_id": slot["id"], "slot_label": slot["time"] if C.V2_ROUND == "2" else slot["label"],
+                                  "sample_idx": k,
                                   "origin_id": r.origin_id, "dest_id": r.dest_id,
                                   "origin_name": r.origin_name, "dest_name": r.dest_name,
                                   "prompt": benchmark_prompt(r.origin_name, r.dest_name, day, slot["label"], slot["time"])})
@@ -259,6 +308,10 @@ def run(kind: str, items: list, model_key: str, condition: str, system_prompt: s
             rec["valid_numbers"] = bool(isinstance(p.get("estimated_distance_km"), (int, float))
                                         and isinstance(p.get("estimated_time_minutes"), (int, float))
                                         and p["estimated_distance_km"] > 0 and p["estimated_time_minutes"] > 0)
+            if schema is ROUTE_SCHEMA_R2:
+                rec["valid_numbers"] = rec["valid_numbers"] and bool(p.get("suggested_route")) and all(
+                    isinstance(x.get(k), (int, float)) and x[k] >= 0
+                    for x in p["suggested_route"] for k in ("distance_km", "time_minutes"))
         label = it.get("route_id", it.get("landmark_id"))
         extra = (f"{it['day'][:3]} {it['slot_id']:8s} s{it['sample_idx']}" if kind == "benchmark" else it["llm_name"])
         with lock:
@@ -365,7 +418,7 @@ def main():
         p.add_argument("--workers", type=int, default=1, help="parallel requests (e.g. 4 on a paid key)")
         if name == "benchmark":
             p.add_argument("--condition", choices=["A", "B"], required=True)
-            p.add_argument("--part", choices=["main", "consistency", "all"], default="main")
+            p.add_argument("--part", choices=["main", "consistency", "all", "control"], default="main")
             p.add_argument("--approved-by-ishan", action="store_true",
                            help="required for condition B runs of more than 3 calls (D-46)")
     sub.add_parser("grounding-eval")
@@ -394,9 +447,12 @@ def main():
                 sys.exit("Condition B is limited to test calls (--limit 1..3) unless run with --approved-by-ishan "
                          "(Ishan's explicit approval required, D-09/D-46).")
             print("NOTE: condition B (high thinking) — costliest step.")
-        system_prompt = C.SYSTEM_PROMPT_FILE.read_text(encoding="utf-8").strip()
+        system_prompt = C.V2_BENCHMARK_SYSTEM_PROMPT_FILE.read_text(encoding="utf-8").strip()
+        schema, suffix = ROUTE_SCHEMA, ""
+        if C.V2_ROUND == "2":
+            schema, suffix = (ROUTE_SCHEMA_R2_CONTROL, "_format_control") if args.part == "control" else (ROUTE_SCHEMA_R2, "")
         run("benchmark", benchmark_items(args.part, args.condition), model_key, args.condition, system_prompt,
-            ROUTE_SCHEMA, d / f"{model_key}_{args.condition}.jsonl", args.dry_run, args.limit, args.mock,
+            schema, d / f"{model_key}_{args.condition}{suffix}.jsonl", args.dry_run, args.limit, args.mock,
             args.workers)
 
 
