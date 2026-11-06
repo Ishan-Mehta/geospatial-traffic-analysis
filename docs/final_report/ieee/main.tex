@@ -1,0 +1,662 @@
+% IEEE conference template for the final project report.
+% Overleaf: New Project > Blank Project, replace main.tex with this file, Recompile.
+% IEEEtran is built into Overleaf. No other files are needed until real figures are added.
+
+\documentclass[conference]{IEEEtran}
+
+\usepackage[T1]{fontenc} % also gives the Times font when compiling locally with Tectonic
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{array}
+\usepackage{flafter}
+
+% Table settings: L{width} and C{width} are left-aligned and centred columns of a fixed width.
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\renewcommand{\arraystretch}{1.2}
+
+% Figure placeholder: \figplaceholder{height}{what the figure will show}.
+% To add a real figure, replace the \figplaceholder line in that figure with:
+%   \includegraphics[width=\linewidth]{file_name.png}
+\newcommand{\figplaceholder}[2]{%
+  \fbox{\parbox[c][#1][c]{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{\centering\footnotesize #2}}}
+
+\begin{document}
+
+% Working title. It may change.
+\title{Benchmarking LLMs against Navigation Tools}
+
+\author{\IEEEauthorblockN{Ishan Mehta}
+\IEEEauthorblockA{\textit{Department of Computer Science}\\
+\textit{BITS Pilani, K K Birla Goa Campus}\\
+Goa, India\\
+email address}
+% To add a co-author, remove the % signs on the next four lines.
+% \and
+% \IEEEauthorblockN{Vinayak Naik}
+% \IEEEauthorblockA{\textit{Department of Computer Science}\\
+% \textit{BITS Pilani, K K Birla Goa Campus}\\ Goa, India\\ email address}
+}
+
+\maketitle
+
+\begin{abstract}
+The question, the data, the comparison, the main results and what they mean. Write this last.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Four to six search terms for the topic, method and city.
+\end{IEEEkeywords}
+
+% ======================================================================
+\section{Introduction}
+
+\subsection{Motivation}
+Why route and travel-time knowledge matters, and why Bangalore is a hard test for an LLM.
+
+\subsection{Research Question}
+How close can LLMs, using only their own knowledge, get to Google Maps on routes, distances and travel times?
+
+\subsection{Contributions and Paper Outline}
+What this work adds, and one sentence on how the paper is organized.
+
+\begin{figure}[!htb]
+\centering
+\figplaceholder{2.1cm}{Flow diagram: road lists, geocoding, traffic queries, traffic analysis, benchmark, results}
+\caption{Overview of the project, from road lists to the benchmark.}
+\label{fig:overview}
+\end{figure}
+
+% ======================================================================
+\section{Related Work}
+% Add a study only after reading it.
+
+\subsection{Road Networks and Routing Engines}
+How road networks are modelled as graphs, and what navigation tools such as Google Maps return.
+
+\subsection{Traffic Analysis from Map Data}
+Earlier work on finding congestion and hotspots from map or traffic data.
+
+\subsection{Geographic Knowledge in LLMs}
+Earlier studies testing what LLMs know about places, distances and routes.
+
+\subsection{Prompt Wording and LLM Output}
+Earlier studies on how the wording of a prompt changes LLM answers.
+
+% ======================================================================
+\section{Traffic Data Collection}
+
+\subsection{Road List}
+The official city lists of arterial and sub-arterial roads, and how they became one table.
+
+\subsection{Geocoding and Filtering}
+How vague place names were filtered out and the rest turned into chains of coordinates.
+
+\subsection{Removing Redundant Routes}
+Which routes were dropped because of incomplete chains, shared endpoints, or being part of a longer route.
+
+\begin{table}[!htb]
+\caption{Road List at Each Cleaning Step}
+\label{tab:route_counts}
+\centering
+\begin{tabular}{L{3.5cm}ccc}
+\hline
+Step & Arterial & Sub-arterial & Total \\
+\hline
+Official road list & & & \\
+After geocoding and filtering & & & \\
+After removing shared endpoints & & & \\
+After removing routes inside longer routes & & & \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Route Geometries}
+How the coordinate chains were matched to OpenStreetMap roads and drawn in QGIS.
+
+\begin{figure}[!htb]
+\centering
+\figplaceholder{2.6cm}{Two maps side by side: arterial routes and sub-arterial routes}
+\caption{Arterial (left) and sub-arterial (right) routes drawn in QGIS.}
+\label{fig:route_geometries}
+\end{figure}
+
+\subsection{Repeated Traffic Queries}
+How the Google Routes API was queried, with which settings, and why traffic data was collected more than once.
+
+\begin{table}[!htb]
+\caption{Traffic Data Collections}
+\label{tab:collections}
+\centering
+\begin{tabular}{lcc}
+\hline
+Detail & First collection & Second collection \\
+\hline
+Dates & & \\
+Days covered & & \\
+Snapshots & & \\
+Query interval & & \\
+Routes per snapshot & & \\
+Via-point setting & & \\
+Level of detail & & \\
+Used for & & \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{From Raw Responses to Tables}
+How the large JSON files were flattened into road legs, and how each leg was given a stable ID.
+
+\subsection{Problems Along the Way}
+Steps versus legs, route lines that change between queries, and road stretches whose values never changed.
+
+% ======================================================================
+\section{Traffic Analysis}
+
+\subsection{Measures}
+Speed, delay, congestion ratio and variation, with formulas, and why raw delay alone favours long roads.
+
+\begin{table}[!htb]
+\caption{Traffic Measures}
+\label{tab:traffic_measures}
+\centering
+\begin{tabular}{L{2.4cm}L{2.5cm}L{2.5cm}}
+\hline
+Measure & Formula & What it shows \\
+\hline
+Speed & & \\
+Delay & & \\
+Congestion ratio & & \\
+Variation & & \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{What Google's Static Duration Means}
+What this field represents, how that affects the delay and congestion measures, and what is used instead.
+
+\subsection{Traffic by Time of Day}
+How travel time changes across the day on weekdays and weekends, with the limits of the dates covered.
+
+\begin{figure}[!htb]
+\centering
+\figplaceholder{2.6cm}{Two line charts by hour of day, weekday and weekend: travel time relative to each leg's own median (left); traffic-aware time divided by static duration (right)}
+\caption{Traffic across the day in the scraped data.}
+\label{fig:traffic_by_hour}
+\end{figure}
+
+\subsection{Slow and Variable Road Legs}
+Which legs are slowest and most variable, after removing legs with geocoding errors or too few snapshots.
+
+\begin{table}[!htb]
+\caption{Slowest and Most Variable Road Legs}
+\label{tab:legs}
+\centering
+\begin{tabular}{L{3cm}ccc}
+\hline
+Road & Length & Mean speed & Variation \\
+\hline
+ & & & \\
+ & & & \\
+ & & & \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[!htb]
+\centering
+\figplaceholder{2.3cm}{Two histograms: mean speed and variation across road legs}
+\caption{Distribution of speed and variation across road legs.}
+\label{fig:distributions}
+\end{figure}
+
+\subsection{Congestion and Variation}
+Whether the most congested legs also vary the most, and whether that variation is a daily pattern or truly unpredictable.
+
+\begin{figure}[!htb]
+\centering
+\figplaceholder{2.6cm}{Scatter plot, one dot per road leg: mean congestion against variation}
+\caption{Congestion against variation for each road leg.}
+\label{fig:congestion_variation}
+\end{figure}
+
+\subsection{Animated Traffic Maps}
+How traffic states were animated in QGIS, what went wrong with shared segments, and the per-route approach that worked.
+
+\begin{figure}[!htb]
+\centering
+\figplaceholder{2.6cm}{Four map frames of one road at different times, showing its traffic state}
+\caption{Frames from the traffic animation of one road.}
+\label{fig:animation}
+\end{figure}
+
+\subsection{Link to the Benchmark}
+How the variable legs and typical speeds from this section are used in the benchmark.
+
+% ======================================================================
+\section{Benchmark Design}
+
+\subsection{Lessons from a Small Pilot}
+What the first small trial got wrong and what was changed as a result.
+
+\subsection{Landmarks}
+How landmarks were chosen, looked up by name, checked automatically and reviewed by hand.
+
+\subsection{Routes and Queries}
+How routes were chosen by length, road type and exposure to variable roads. Also define a route and a query.
+
+\begin{figure}[!htb]
+\centering
+\figplaceholder{2.9cm}{Map of the benchmark routes and landmarks over the main roads of Bangalore}
+\caption{Benchmark routes and landmarks.}
+\label{fig:routes_map}
+\end{figure}
+
+\subsection{Google Maps Reference}
+Request settings, the reference week, why these are predictions, and the check that start and end points match.
+
+\subsection{LLM Setup}
+Models, settings, no tools, independent calls, shuffled order and repeat answers. Both LLMs receive the same text.
+
+\begin{table}[!htb]
+\caption{Setup of the Three Sources}
+\label{tab:setup}
+\centering
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{L{2.1cm}L{1.9cm}L{1.9cm}L{1.9cm}}
+\hline
+Setting & Google Maps & Gemini & ChatGPT \\
+\hline
+Place given as & & & \\
+Day and time & & & \\
+Mode or model & & & \\
+Version & & & \\
+Reasoning & & & \\
+Temperature & & & \\
+Tools & & & \\
+Queries & & & \\
+Repeat answers & & & \\
+Cost & & & \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Prompt and Answer Format}
+The exact neutral prompt, one example question and the fixed answer fields.
+
+\begin{table}[!htb]
+\caption{Answer Format Required from Both LLMs}
+\label{tab:answer_format}
+\centering
+\begin{tabular}{L{3cm}L{1.2cm}L{3.3cm}}
+\hline
+Field & Type & Description \\
+\hline
+Suggested route & & \\
+Estimated distance & & \\
+Estimated time & & \\
+Traffic level & & \\
+Reasoning & & \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Earlier Prompt}
+How the earlier prompt differed, and why its data is used only to study prompt wording.
+
+\begin{table}[!htb]
+\caption{Earlier and Neutral Prompt Wording}
+\label{tab:prompt_wording}
+\centering
+\begin{tabular}{L{1.8cm}L{2.9cm}L{2.9cm}}
+\hline
+Prompt part & Earlier prompt & Neutral prompt \\
+\hline
+Last instruction & & \\
+Time of day & & \\
+Road list & & \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Landmark Check and Road Names}
+The separate check of where each LLM places a landmark, and how road names were matched.
+
+\subsection{Measures and Statistics}
+Error measures, the traffic index, route-level uncertainty, and how the LLMs were compared on the same queries.
+
+\begin{table}[!htb]
+\caption{Benchmark Measures}
+\label{tab:measures}
+\centering
+\begin{tabular}{L{2.5cm}L{2.2cm}L{2.9cm}}
+\hline
+Measure & Formula & Plain meaning and range \\
+\hline
+Ratio to Google & & \\
+Typical error & & \\
+Traffic index & & \\
+Rush-hour multiplier & & \\
+Rank correlation & & \\
+Road name validity & & \\
+Road overlap & & \\
+Repeat spread & & \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Simple Formula Baseline}
+A rule of thumb using straight-line distance and typical speed, and the extra information it has.
+
+% ======================================================================
+\section{Results}
+
+\subsection{Google Maps Reference}
+Predicted traffic by day and time, how often Google changes path, and fastest versus shortest paths.
+
+\begin{figure}[!htb]
+\centering
+\figplaceholder{2.4cm}{Heatmap: day of the week against time of day, showing Google's traffic index}
+\caption{Google's predicted traffic by day and time.}
+\label{fig:google_heatmap}
+\end{figure}
+
+\begin{table}[!htb]
+\caption{Routes by Length and Road Type}
+\label{tab:route_groups}
+\centering
+\begin{tabular}{lcccc}
+\hline
+Route length & Arterial & Mixed & Sub-arterial & Total \\
+\hline
+Short & & & & \\
+Medium & & & & \\
+Long & & & & \\
+Total & & & & \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Gemini and ChatGPT against Google Maps}
+Each result below gives its method, numbers, figure, examples and outliers.
+
+\subsubsection{Places and Road Names}
+Whether each LLM places landmarks correctly and names real roads, with best and worst cases.
+
+\begin{table}[!htb]
+\caption{Place, Road Name and Repeat Answer Checks}
+\label{tab:checks}
+\centering
+\begin{tabular}{L{4.2cm}cc}
+\hline
+Measure & Gemini & ChatGPT \\
+\hline
+Landmarks misplaced & & \\
+Median landmark error & & \\
+Road names found to be real & & \\
+Repeat spread, distance & & \\
+Repeat spread, time & & \\
+Same traffic level on repeat & & \\
+Same road list on repeat & & \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[!htb]
+\centering
+\figplaceholder{2.4cm}{Map or histogram: distance between each LLM's point and Google's point for every landmark}
+\caption{How far each LLM places landmarks from Google's points.}
+\label{fig:landmark_error}
+\end{figure}
+
+\subsubsection{Distance and Time}
+How close each LLM gets, with one worked query next to Google's answer.
+
+\begin{table}[!htb]
+\caption{Distance and Time Accuracy}
+\label{tab:accuracy}
+\centering
+\begin{tabular}{lcccc}
+\hline
+ & \multicolumn{2}{c}{Distance} & \multicolumn{2}{c}{Time} \\
+\cline{2-3}\cline{4-5}
+Source & Ratio & Error & Ratio & Error \\
+\hline
+Gemini & & & & \\
+ChatGPT & & & & \\
+Simple formula & & & & \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure*}[!t]
+\centering
+\figplaceholder{2.9cm}{Four scatter plots with log axes: LLM against Google for distance (left) and time (right), one row per LLM}
+\caption{Gemini and ChatGPT against Google Maps for every query.}
+\label{fig:scatter}
+\end{figure*}
+
+\begin{table}[!htb]
+\caption{Worked Example: One Route at Two Times}
+\label{tab:worked_example}
+\centering
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{L{1.6cm}cccL{2.6cm}}
+\hline
+Source & Distance & Time & Traffic level & Roads named \\
+\hline
+\multicolumn{5}{l}{\textit{Morning query}} \\
+Google Maps & & & & \\
+Gemini & & & & \\
+ChatGPT & & & & \\
+\multicolumn{5}{l}{\textit{Night query}} \\
+Google Maps & & & & \\
+Gemini & & & & \\
+ChatGPT & & & & \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Time of Day}
+How each LLM's times and traffic levels change across the day compared with Google.
+
+\begin{table}[!htb]
+\caption{Time Ratio to Google by Time of Day}
+\label{tab:time_ratio}
+\centering
+\begin{tabular}{lccccc}
+\hline
+Source & 08:00 & New & 14:00 & 18:00 & 23:00 \\
+\hline
+Gemini, weekday & & & & & \\
+Gemini, weekend & & & & & \\
+ChatGPT, weekday & & & & & \\
+ChatGPT, weekend & & & & & \\
+Simple formula & & & & & \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[!htb]
+\centering
+\figplaceholder{2.4cm}{Line charts across the day for Google, Gemini and ChatGPT: weekdays (left) and weekends (right), each time relative to the same route at weekday night}
+\caption{Shape of the day for each source.}
+\label{fig:day_shape}
+\end{figure}
+
+\begin{figure}[!htb]
+\centering
+\figplaceholder{2.6cm}{Scatter plot, one dot per route: rush-hour multiplier of each LLM against Google's, marked by route length}
+\caption{Rush-hour multiplier for each route.}
+\label{fig:multiplier}
+\end{figure}
+
+\begin{figure}[!htb]
+\centering
+\figplaceholder{2.3cm}{Stacked bars: share of each traffic level reported by each LLM at each time, with Google's traffic index above}
+\caption{Traffic levels reported by the LLMs at each time of day.}
+\label{fig:traffic_levels}
+\end{figure}
+
+\subsubsection{Road Choice}
+How many of Google's roads each LLM names, by road type.
+
+\begin{table}[!htb]
+\caption{Road Overlap with Google by Road Type}
+\label{tab:road_overlap}
+\centering
+\setlength{\tabcolsep}{2.5pt}
+\footnotesize
+\begin{tabular}{lcccccc}
+\hline
+ & \multicolumn{3}{c}{Gemini} & \multicolumn{3}{c}{ChatGPT} \\
+\cline{2-4}\cline{5-7}
+Road type & Overlap & Recall & Precision & Overlap & Recall & Precision \\
+\hline
+Arterial & & & & & & \\
+Mixed & & & & & & \\
+Sub-arterial & & & & & & \\
+All routes & & & & & & \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Repeat Answers}
+How much the numbers and road lists change when a query is asked again.
+
+\subsubsection{Simple Formula}
+Whether each LLM beats the rule of thumb, overall and by time of day.
+
+\subsection{Where the LLMs Do Worst}
+Errors by route length, road type and exposure to variable roads, with length controlled, then the outliers.
+
+\begin{figure}[!htb]
+\centering
+\figplaceholder{2.4cm}{Bars for Gemini and ChatGPT: typical error by route length (left) and by road type on longer routes (right)}
+\caption{Typical error by route length and road type.}
+\label{fig:where_worst}
+\end{figure}
+
+\begin{table}[!htb]
+\caption{Comparisons between Route Groups}
+\label{tab:group_tests}
+\centering
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{L{2.9cm}C{0.6cm}C{0.6cm}C{0.6cm}C{0.6cm}C{0.6cm}C{0.6cm}}
+\hline
+ & \multicolumn{3}{c}{Gemini} & \multicolumn{3}{c}{ChatGPT} \\
+\cline{2-4}\cline{5-7}
+Groups A and B, measure & A & B & p & A & B & p \\
+\hline
+Short and long routes & & & & & & \\
+Arterial and sub-arterial, all routes & & & & & & \\
+Arterial and sub-arterial, longer routes & & & & & & \\
+High and low exposure & & & & & & \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table*}[!t]
+\caption{Outlier Routes}
+\label{tab:outliers}
+\centering
+\begin{tabular}{L{3.5cm}L{1.4cm}cccccc L{2.8cm}}
+\hline
+ & & \multicolumn{3}{c}{Distance} & \multicolumn{3}{c}{Time} & \\
+\cline{3-5}\cline{6-8}
+Route & Query & Google & Gemini & ChatGPT & Google & Gemini & ChatGPT & Possible reason \\
+\hline
+ & & & & & & & & \\
+ & & & & & & & & \\
+ & & & & & & & & \\
+\hline
+\end{tabular}
+\end{table*}
+
+\subsection{Effect of Prompt Wording}
+Gemini with the earlier and neutral prompts, on the same routes, days and times. ChatGPT has no earlier data.
+
+\begin{table}[!htb]
+\caption{Gemini with the Earlier and Neutral Prompts}
+\label{tab:prompt_effect}
+\centering
+\begin{tabular}{L{3cm}ccc}
+\hline
+Measure & Earlier & Neutral & Google \\
+\hline
+Morning time ratio & & & \\
+Midday time ratio & & & \\
+Evening time ratio & & & \\
+Night time ratio & & & \\
+Rush-hour multiplier & & & \\
+Share labelled heavy & & & \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[!htb]
+\centering
+\figplaceholder{2.4cm}{Line chart across the day: Gemini with each prompt, and Google}
+\caption{Gemini's travel times under the two prompts, with Google.}
+\label{fig:prompt_effect}
+\end{figure}
+
+% ======================================================================
+\section{Discussion and Limitations}
+
+\subsection{What the LLMs Know}
+What the results suggest about LLM knowledge. Unproven explanations appear only as possibilities.
+
+\subsection{Earlier Expectations}
+How the results compare with what we expected at the start of the project.
+
+\begin{table}[!htb]
+\caption{Earlier Expectations and Outcomes}
+\label{tab:expectations}
+\centering
+\begin{tabular}{L{3.6cm}L{2.2cm}L{1.8cm}}
+\hline
+What we expected & What we found & Evidence \\
+\hline
+Main roads easier than side roads & & \\
+Travel times weaker than distances & & \\
+Added road context helps & & \\
+India-specific tools do better & & \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Practical Meaning}
+Where an LLM's answer could be useful to a traveller, and where it should not be trusted.
+
+\subsection{Limitations}
+Predicted traffic, limited dates, remaining prompt effects, few side-road routes, name matching and data terms.
+
+% ======================================================================
+\section{Conclusion and Future Work}
+
+\subsection{Conclusion}
+The answer to the research question in a few sentences.
+
+\subsection{Future Work}
+Next steps: road context, more reasoning, more LLMs, MapmyIndia, more side-road routes and live traffic.
+
+% ======================================================================
+\section*{Acknowledgment}
+Thanks to the supervisor, Prof. Vinayak Naik, and to others who helped.
+
+\section*{Data Availability}
+What can be shared, and why raw Google and LLM data is not published.
+
+% Add references only for sources the author has read. When the first one is ready,
+% replace the two lines below with:
+%   \begin{thebibliography}{00}
+%   \bibitem{key} Author, ``Title,'' Venue, Year.
+%   \end{thebibliography}
+\section*{References}
+No references yet.
+
+
+\end{document}
