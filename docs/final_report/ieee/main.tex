@@ -134,85 +134,72 @@ Google reports the travel time with traffic for a whole leg, not for the turns i
 % ======================================================================
 \section{Traffic Analysis}
 
-\subsection{Measures}
-Speed, delay, congestion ratio and variation, with formulas, and why raw delay alone favours long roads.
+\subsection{Cleaning and Measures}
+Some legs could not be trusted. We removed 32 legs that lie outside Bangalore, 86 whose road distance is more than twice the straight-line distance between their ends, and 7 that were missing from many queries. The first two groups come from geocoding errors; some removed legs are more than 150~km long. This left 564 of the 689 legs.
 
-\begin{table}[!htb]
-\caption{Traffic Measures}
-\label{tab:traffic_measures}
-\centering
-\begin{tabular}{L{2.4cm}L{2.5cm}L{2.5cm}}
-\hline
-Measure & Formula & What it shows \\
-\hline
-Speed & & \\
-Delay & & \\
-Congestion ratio & & \\
-Variation & & \\
-\hline
-\end{tabular}
-\end{table}
+Speed is a leg's length divided by its travel time with traffic. To compare legs of different length, we divide each reading by the median travel time of the same leg and call this the \emph{relative travel time}: 1.2 means 20\,\% slower than usual for that leg. A leg's \emph{variation} is the standard deviation of its travel time divided by its mean.
 
 \subsection{What Google's Static Duration Means}\label{sec:static}
-What this field represents, how that affects the delay and congestion measures, and what is used instead.
-
-\subsection{Traffic by Time of Day}
-How travel time changes across the day on weekdays and weekends, with the limits of the dates covered.
+The earlier analysis measured delay as the travel time minus Google's static duration, as if the static duration were the time on an empty road. The data does not support this. Of all readings, 63\,\% are faster than the static duration, and between 02:00 and 04:00 the median reading takes only 0.70 times the static duration (Fig.~\ref{fig:traffic_by_hour}b). An empty-road time could not be beaten this often. Google's API reference describes the field as the time without traffic, while its page on routing options describes it as an estimate from historical traffic only. Our data fits the second description. We therefore do not use delay or congestion ratios built on this field, and use the relative travel time instead.
 
 \begin{figure}[!htb]
 \centering
-\figplaceholder{2.6cm}{Two line charts by hour of day, weekday and weekend: travel time relative to each leg's own median (left); traffic-aware time divided by static duration (right)}
-\caption{Traffic across the day in the scraped data.}
+\includegraphics[width=\linewidth]{figures/fig_traffic_by_hour.pdf}
+\caption{Median relative travel time by query time (a), and median travel time divided by Google's static duration (b). The dotted line marks 1.}
 \label{fig:traffic_by_hour}
 \end{figure}
 
-\subsection{Slow and Variable Road Legs}
-Which legs are slowest and most variable, after removing legs with geocoding errors or too few snapshots.
+\subsection{Traffic across the Day}
+Fig.~\ref{fig:traffic_by_hour}a shows the median relative travel time at each two-hour query time. Roads are fastest between 02:00 and 04:00, at about 0.75 of their usual time. Travel time rises through the morning, stays 10--18\,\% above usual from 10:00 to 16:00, and peaks at 18:00 at about 28\,\% above usual on both weekdays and weekends. There is no sharp morning peak; the morning rise flattens into a midday plateau. Weekends are mainly lighter in the morning. In speed, the median leg moves at about 29~km/h at night and 16~km/h at 18:00 on weekdays. The weekday values rest on few days, one of them a public holiday, so this profile is indicative.
+
+\subsection{Slow and Variable Legs}
+Half of the legs have a median speed between 18 and 25~km/h. Table~\ref{tab:legs} lists the slowest legs of at least 1~km and the legs with the largest \emph{daily swing}, the travel time at the slowest query time divided by that at the fastest. The slowest legs are all short, between 1 and 3.5~km, and move at 8 to 13~km/h. The largest swings, three to four times, include long legs in the east of the city such as Sadaramangala Road and Whitefield Road. Nineteen legs, mostly short side roads, reported exactly the same travel time in every query. One possible reason is that Google has too little traffic data for them and returns a fixed estimate, but we could not check this. The most variable fifth of legs, with a variation of 0.28 or more, lies mainly in the centre and along a few radial corridors (Fig.~\ref{fig:legs_map}).
 
 \begin{table}[!htb]
-\caption{Slowest and Most Variable Road Legs}
+\caption{Slowest Legs and Legs with the Largest Daily Swing (Legs of 1~km or More)}
 \label{tab:legs}
 \centering
-\begin{tabular}{L{3cm}ccc}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{L{3.3cm}ccc}
 \hline
-Road & Length & Mean speed & Variation \\
+Leg (part of) & Length, km & Speed, km/h & Swing \\
 \hline
- & & & \\
- & & & \\
- & & & \\
+\multicolumn{4}{l}{\textit{Slowest}} \\
+T.C.M. Royan Road & 1.5 & 8.2 & 2.5 \\
+Victoria Road--Lower Agaram Road & 1.2 & 10.7 & 1.4 \\
+Kanakapura Road & 1.4 & 12.4 & 2.4 \\
+K.R. Road & 3.3 & 12.7 & 1.7 \\
+\multicolumn{4}{l}{\textit{Largest daily swing}} \\
+Mysore--Old Madras Road & 1.3 & 33.5 & 4.1 \\
+Sadaramangala Road & 17.3 & 19.9 & 3.0 \\
+Whitefield Road--Varthur Road & 4.3 & 18.1 & 2.9 \\
+Basavanna Main Road--Graphite Road & 17.2 & 18.9 & 2.8 \\
 \hline
 \end{tabular}
 \end{table}
 
 \begin{figure}[!htb]
 \centering
-\figplaceholder{2.3cm}{Two histograms: mean speed and variation across road legs}
-\caption{Distribution of speed and variation across road legs.}
-\label{fig:distributions}
+\includegraphics[width=0.9\linewidth]{figures/fig_legs_map.pdf}
+\caption{The 564 road legs used in the analysis. Red: the most variable fifth.}
+\label{fig:legs_map}
 \end{figure}
 
-\subsection{Congestion and Variation}
-Whether the most congested legs also vary the most, and whether that variation is a daily pattern or truly unpredictable.
-
-\begin{figure}[!htb]
-\centering
-\figplaceholder{2.6cm}{Scatter plot, one dot per road leg: mean congestion against variation}
-\caption{Congestion against variation for each road leg.}
-\label{fig:congestion_variation}
-\end{figure}
+\subsection{Daily Pattern or Unpredictability?}
+During the project we asked whether the most congested roads are also the least predictable. Variation alone cannot answer this: a leg that is slow every evening and fast every night varies a lot but is easy to predict. We therefore split each leg's variation into the part explained by the query time and the part left over. For the median leg, the query time explains 87\,\% of the variation, and the left-over part is about 7\,\% of travel time. Legs with a larger daily swing also have more left-over variation (Spearman rank correlation 0.55; 9.2\,\% for the quarter of legs with the largest swing against 6.2\,\% for the rest). So the busiest legs are somewhat less predictable, but most of what looks like unpredictability is the regular daily cycle. With few readings per query time, the left-over part is only a rough estimate.
 
 \subsection{Animated Traffic Maps}
-How traffic states were animated in QGIS, what went wrong with shared segments, and the per-route approach that worked.
+Google also returns a traffic state (normal, slow or jam) for each stretch of the route line. We animated these states over time with the QGIS temporal controller. A first attempt merged all routes into one layer of shared road segments, identified by hashed coordinates. It failed: the files were too large, two routes on the same road could report different states for the same segment at the same time, and route lines shifted slightly between queries, so segments flickered, vanished or kept old colours. Building each route's animation separately, with every stretch at every time stored as its own line, removed these problems. Fig.~\ref{fig:animation} shows four frames for Church Road on one weekday. Google's path itself also changed: at 03:52 the route ends along a different street.
 
 \begin{figure}[!htb]
 \centering
-\figplaceholder{2.6cm}{Four map frames of one road at different times, showing its traffic state}
-\caption{Frames from the traffic animation of one road.}
+\includegraphics[width=\linewidth]{figures/fig_animation_frames.pdf}
+\caption{Traffic state along Church Road at four times on one weekday.}
 \label{fig:animation}
 \end{figure}
 
 \subsection{Link to the Benchmark}
-How the variable legs and typical speeds from this section are used in the benchmark.
+Two results feed the benchmark. The most variable fifth of legs is used to tag how much of each benchmark route runs on variable roads, and the typical speeds at each time of day give the simple formula used as a baseline.
 
 % ======================================================================
 \section{Benchmark Design}
