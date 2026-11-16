@@ -205,116 +205,148 @@ Two results feed the benchmark. The most variable fifth of legs is used to tag h
 \section{Benchmark Design}
 
 \subsection{Lessons from a Small Pilot}
-What the first small trial got wrong and what was changed as a result.
+A first small trial used 14 road segments from the traffic data as routes. Ten were shorter than 1.5~km, their names came from turning coordinates back into addresses (giving names such as ``Start of X''), two came from geocoding mistakes, and only one of 22 LLM answers was saved. We rebuilt the benchmark around named landmarks, longer routes and a record of every answer.
 
 \subsection{Landmarks}
-How landmarks were chosen, looked up by name, checked automatically and reviewed by hand.
+We listed 70 well-known places across the city: metro stations, junctions, bus and railway stations, hospitals, tech parks, malls and campuses. Each name was looked up once with Google Places. A result was flagged if its name did not match, it was far from the expected area, another place with the same name existed, it was an area rather than a point, or it lay more than 150~m from a drivable road. After a manual review of the flagged places, 66 landmarks remained, and 64 of them are used in routes.
 
 \subsection{Routes and Queries}
-How routes were chosen by length, road type and exposure to variable roads. Also define a route and a query.
+A \emph{route} is a trip from one landmark to another. Candidate routes were landmark pairs 0.7 to 22~km apart in a straight line. Each was given three tags from its shortest path on OpenStreetMap: a length band (1--5, 5--12 or 12--25~km), a road type from the share of its length on main roads (arterial if at least 0.6, sub-arterial if at most 0.4, otherwise mixed), and its exposure to the most variable legs of Section~IV (high or low within its length band). We chose four routes for each of the 18 combinations, giving 72 routes (Fig.~\ref{fig:routes_map}). No landmark is used more than three times. Because Google's fastest path can differ from the shortest path, the final tags are recomputed from the path Google uses most often.
+
+A \emph{query} is one route at one time on one day: 08:00, 14:00, 18:00 or 23:00 on each of the seven days, so 28 queries per route and 2,016 in all.
 
 \begin{figure}[!htb]
 \centering
-\figplaceholder{2.9cm}{Map of the benchmark routes and landmarks over the main roads of Bangalore}
-\caption{Benchmark routes and landmarks.}
+\includegraphics[width=0.9\linewidth]{figures/fig_routes_map.pdf}
+\caption{The 72 benchmark routes as planned (shortest paths on OpenStreetMap), by length band, over the road legs of Section~IV.}
 \label{fig:routes_map}
 \end{figure}
 
 \subsection{Google Maps Reference}
-Request settings, the reference week, why these are predictions, and the check that start and end points match.
+Google Maps receives each landmark's coordinates. For every query we asked the Routes API for the route at that day and time in the week of Saturday 28 November to Friday 4 December 2026, with the most thorough traffic-aware routing mode. Because the departure times lie in the future, the answers are Google's \emph{predicted} travel times, not measured ones. Google's first suggested route is the reference; up to two alternatives were stored. We checked that Google's start and end points lie close to our landmark coordinates.
+
+Google gives the time with traffic only for a whole leg. To get road-by-road times, we sent a second request for each query with a stop at every point where the road changes along that query's own route. Stretches shorter than 300~m were merged with a neighbour, and a route has at most 11 parts. Every query was checked that its parts add up to the whole route.
 
 \subsection{LLM Setup}
-Models, settings, no tools, independent calls, shuffled order and repeat answers. Both LLMs receive the same text.
+Each LLM receives the landmark names, the weekday and the clock time, and nothing else (Table~\ref{tab:setup}). Every query is a separate request with no chat history and no tools. Queries are sent in a fixed shuffled order, so that any change in the model during a run is spread over all routes. Ten routes are asked twice more to measure how much answers change on repeat.
 
 \begin{table}[!htb]
 \caption{Setup of the Three Sources}
 \label{tab:setup}
 \centering
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{L{2.1cm}L{1.9cm}L{1.9cm}L{1.9cm}}
+\begin{tabular}{L{1.55cm}L{2.1cm}L{2.1cm}L{2.1cm}}
 \hline
 Setting & Google Maps & Gemini & ChatGPT \\
 \hline
-Place given as & & & \\
-Day and time & & & \\
-Mode or model & & & \\
-Version & & & \\
-Reasoning & & & \\
-Temperature & & & \\
-Tools & & & \\
-Queries & & & \\
-Repeat answers & & & \\
-Cost & & & \\
+Place given as & Coordinates & Landmark name & Landmark name \\
+Day and time & Departure time & Weekday and clock time & Weekday and clock time \\
+Mode or model & Traffic-aware, most thorough & gemini-3.8-flash & To be confirmed \\
+Reasoning & -- & Lowest (low) & Lowest offered \\
+Temperature & -- & 1.0 & 1.0 if accepted \\
+Tools & -- & None & None \\
+Queries & 2,016 & 2,016 & 2,016 \\
+Repeat answers & -- & 10 routes, 2 extra & 10 routes, 2 extra \\
 \hline
 \end{tabular}
 \end{table}
 
 \subsection{Prompt and Answer Format}
-The exact neutral prompt, one example question and the fixed answer fields.
+Both LLMs receive the same instruction and question (Table~\ref{tab:prompt}). The API forces the answer into a fixed format (Table~\ref{tab:answer_format}), so no free text has to be parsed. The road list gives a distance and time for each road, which allows a road-by-road comparison with Google.
+
+\begin{table}[!htb]
+\caption{Neutral Prompt Given to Both LLMs}
+\label{tab:prompt}
+\centering
+\footnotesize
+\begin{tabular}{L{8.1cm}}
+\hline
+\textit{Instruction} \\
+\texttt{You are a routing assistant for car travel in Bangalore, India.} \\
+\texttt{IMPORTANT CONSTRAINTS:} \\
+\texttt{- Do NOT use any external tool, mapping service, Google Maps, navigation agent, or real-time data source.} \\
+\texttt{- Answer based ONLY on your general knowledge of Bangalore's road network and traffic patterns.} \\
+\texttt{- You MUST provide numeric estimates even if uncertain. Do not refuse or say you cannot determine this.} \\
+\texttt{- Consider the time of day and day of week when estimating travel time.} \\
+\hline
+\textit{Example question} \\
+\texttt{Origin: Tin Factory Junction} \\
+\texttt{Destination: Hennur Cross} \\
+\texttt{City: Bangalore, India} \\
+\texttt{Day of the week: Tuesday} \\
+\texttt{Time of day: 08:00} \\
+\hline
+\end{tabular}
+\end{table}
 
 \begin{table}[!htb]
 \caption{Answer Format Required from Both LLMs}
 \label{tab:answer_format}
 \centering
-\begin{tabular}{L{3cm}L{1.2cm}L{3.3cm}}
+\begin{tabular}{L{2.2cm}L{1.3cm}L{3.6cm}}
 \hline
 Field & Type & Description \\
 \hline
-Suggested route & & \\
-Estimated distance & & \\
-Estimated time & & \\
-Traffic level & & \\
-Reasoning & & \\
+Suggested route & List & Roads in driving order, each with its name, distance (km) and time (min) \\
+Estimated distance & Number & Total driving distance in km \\
+Estimated time & Number & Total driving time in minutes at that day and time \\
+Traffic level & One of four & None, light, moderate or heavy \\
+Reasoning & Text & Short explanation of route and time \\
 \hline
 \end{tabular}
 \end{table}
 
 \subsection{Earlier Prompt}
-How the earlier prompt differed, and why its data is used only to study prompt wording.
+An earlier run in October 2026 asked Gemini the same 2,016 queries with the project's first prompt. That prompt pointed the model towards rush hour (Table~\ref{tab:prompt_wording}), so its answers are used only to study the effect of prompt wording. The neutral prompt also asks for road-by-road times. To separate the effect of the wording from the effect of this new format, Gemini answered the queries of the ten repeat routes once more with the neutral wording and a plain list of road names.
 
 \begin{table}[!htb]
 \caption{Earlier and Neutral Prompt Wording}
 \label{tab:prompt_wording}
 \centering
-\begin{tabular}{L{1.8cm}L{2.9cm}L{2.9cm}}
+\footnotesize
+\begin{tabular}{L{1.4cm}L{3.0cm}L{3.0cm}}
 \hline
-Prompt part & Earlier prompt & Neutral prompt \\
+Part & Earlier prompt & Neutral prompt \\
 \hline
-Last instruction & & \\
-Time of day & & \\
-Road list & & \\
+Last instruction & \ldots{} day of week when estimating travel time --- Bangalore has heavy peak-hour traffic. & \ldots{} day of week when estimating travel time. \\
+Time line & Morning Rush (08:00), Off-Peak (14:00), Evening Rush (18:00), Night (23:00) & Clock time only, e.g.\ 08:00 \\
+Road list & Road names only, with ``Hosur Road'' and ``Outer Ring Road'' as examples & Each road with distance and time, no examples \\
+Time field & \ldots{} including expected traffic & \ldots{} at the given day and time of day \\
 \hline
 \end{tabular}
 \end{table}
 
 \subsection{Landmark Check and Road Names}
-The separate check of where each LLM places a landmark, and how road names were matched.
+To separate ``does not know the place'' from ``routes badly'', each LLM was also asked, in a separate request, where each landmark is (locality and coordinates). A landmark counts as misplaced if the LLM's point is more than 2~km from Google's and the locality does not match.
+
+To compare roads, Google's route line was laid onto OpenStreetMap: a point every 20~m was matched to the nearest road within 25~m, and a road name was kept if it held for at least three points. Road names from Google's turn-by-turn instructions were added. LLM road names were cleaned (case, abbreviations such as ``Rd'' and ``ORR'') and counted as the same road as a reference name when their similarity score was at least 85 out of 100. The reference list joins OpenStreetMap names, Google's instruction names and the BBMP road list.
 
 \subsection{Measures and Statistics}
-Error measures, the traffic index, route-level uncertainty, and how the LLMs were compared on the same queries.
+Table~\ref{tab:measures} defines the measures. Our main error measure is the \emph{typical miss}: an LLM value 1.25 times or 1/1.25 times Google's both count as a 25\,\% miss. The 28 queries of one route are not independent, so 95\,\% confidence intervals come from resampling whole routes 2,000 times, and group differences are tested by shuffling group labels 5,000 times on per-route values (a permutation test). Gemini and ChatGPT are compared on the same queries. Because route length differs between road types, road-type comparisons are repeated on routes of 5~km or more.
 
 \begin{table}[!htb]
 \caption{Benchmark Measures}
 \label{tab:measures}
 \centering
-\begin{tabular}{L{2.5cm}L{2.2cm}L{2.9cm}}
+\footnotesize
+\begin{tabular}{L{1.8cm}L{2.8cm}L{2.9cm}}
 \hline
-Measure & Formula & Plain meaning and range \\
+Measure & Definition & Meaning \\
 \hline
-Ratio to Google & & \\
-Typical error & & \\
-Traffic index & & \\
-Rush-hour multiplier & & \\
-Rank correlation & & \\
-Road name validity & & \\
-Road overlap & & \\
-Repeat spread & & \\
+Ratio to Google & LLM value / Google value & Above 1: LLM too high \\
+Typical miss & $e^{m}-1$, $m$ = median of $|\ln(\text{LLM}/\text{Google})|$ & Size of the miss, ignoring direction; 0 is perfect \\
+Traffic index & Google time / route's fastest of its 28 times & 1 is the route's best case \\
+Rush-hour multiplier & Mean of 08:00 and 18:00 / 23:00, weekdays & How much slower rush hour is than night \\
+Rank correlation & Spearman's $\rho$ & $-1$ to 1: do two series rise and fall together \\
+Road validity & Share of named roads found in the reference list & 0 to 1 \\
+Road overlap & Shared roads / roads in either list & 0 to 1 \\
+Repeat spread & Standard deviation / mean over three answers & 0: identical answers \\
 \hline
 \end{tabular}
 \end{table}
 
 \subsection{Simple Formula Baseline}
-A rule of thumb using straight-line distance and typical speed, and the extra information it has.
+As a rule of thumb, we estimate distance as the straight-line distance times 1.22, the median ratio of road to straight-line distance among the candidate routes, and time as that distance divided by the median speed of the traffic data of Section~IV near the same time of day, separately for weekdays and weekends. The formula knows the exact coordinates, which the LLMs do not, and its speeds come from a few days of data.
 
 % ======================================================================
 \section{Results}
@@ -388,7 +420,7 @@ How close each LLM gets, with one worked query next to Google's answer.
 \hline
  & \multicolumn{2}{c}{Distance} & \multicolumn{2}{c}{Time} \\
 \cline{2-3}\cline{4-5}
-Source & Ratio & Error & Ratio & Error \\
+Source & Ratio & Miss & Ratio & Miss \\
 \hline
 Gemini & & & & \\
 ChatGPT & & & & \\
@@ -432,15 +464,15 @@ How each LLM's times and traffic levels change across the day compared with Goog
 \caption{Time Ratio to Google by Time of Day}
 \label{tab:time_ratio}
 \centering
-\begin{tabular}{lccccc}
+\begin{tabular}{lcccc}
 \hline
-Source & 08:00 & New & 14:00 & 18:00 & 23:00 \\
+Source & 08:00 & 14:00 & 18:00 & 23:00 \\
 \hline
-Gemini, weekday & & & & & \\
-Gemini, weekend & & & & & \\
-ChatGPT, weekday & & & & & \\
-ChatGPT, weekend & & & & & \\
-Simple formula & & & & & \\
+Gemini, weekday & & & & \\
+Gemini, weekend & & & & \\
+ChatGPT, weekday & & & & \\
+ChatGPT, weekend & & & & \\
+Simple formula & & & & \\
 \hline
 \end{tabular}
 \end{table}
