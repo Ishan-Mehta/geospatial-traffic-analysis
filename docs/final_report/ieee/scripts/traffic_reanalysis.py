@@ -48,6 +48,6 @@ top=L.cv.quantile(.8); print('hotspot cut cv',round(top,3),'n hot',(L.cv>=top).s
 print(L.sort_values('kmh').head(6).round(2).to_string())
 print(L[L.km>=1].sort_values('kmh').head(6).round(2).to_string())
 print(L.sort_values('swing',ascending=False).head(6).round(2).to_string())
-L.to_csv(fOUTDIR + "/legs.csv")
-d[['sub_route_id','slot','wk','idx','ls','kmh']].to_csv(fOUTDIR + "/readings.csv",index=False)
+L.to_csv(OUTDIR + "/legs.csv")
+d[['sub_route_id','slot','wk','idx','ls','kmh']].to_csv(OUTDIR + "/readings.csv",index=False)
 print('distinct slots',sorted(d.slot.unique()), 'days per wk', d.groupby('wk').date.nunique().to_dict())
