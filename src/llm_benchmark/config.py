@@ -259,6 +259,7 @@ V2_LLM_MODELS = {
     },
 }
 V2_LLM_MAX_ATTEMPTS = 5
+V2_LLM_TIMEOUT_S = 120                                 # per request; without it a call can hang when the model is overloaded
 V2_LLM_MAX_RPM = 60                                    # all workers together never exceed this many requests/minute (D-52)
 V2_LLM_COOLDOWN_S = 30                                 # on any 429, every worker pauses at least this long (D-52)
 V2_LLM_STOP_AFTER_CONSECUTIVE_ERRORS = 10              # e.g. daily quota reached -> stop, resume later (D-52)
@@ -298,9 +299,9 @@ if V2_ROUND == "2":
     V2_LLM_DIR = V2_ROUND2_DIR / "llm"
     V2_MOCK_DIR = V2_ROUND2_DIR / "mock"
     V2_BENCHMARK_SYSTEM_PROMPT_FILE = _CONFIG_DIR / "prompts" / "system_prompt_neutral.txt"
-    V2_REFERENCE_MONDAY = "2026-11-23"                 # week = Sat 21 - Fri 27 Nov 2026 (moved from 14-20 Nov, Ishan 16 Nov)
-    V2_WEEKEND_BEFORE_MONDAY = True
-    V2_CALENDAR_NOTES = {"2026-11-27": "Kanakadasa Jayanti (Karnataka public holiday)"}
+    V2_REFERENCE_MONDAY = "2026-11-30"                 # week = Sat 28 Nov - Fri 4 Dec 2026 (Ishan 16 Nov: 21-27 Nov has the
+    V2_WEEKEND_BEFORE_MONDAY = True                    # Kanakadasa Jayanti holiday on Fri 27 Nov)
+    V2_CALENDAR_NOTES = {}
     V2_GMAPS_FIELD_MASK += (",routes.legs.distanceMeters,routes.legs.duration,routes.legs.staticDuration,"
                             "routes.legs.steps.staticDuration,routes.legs.steps.startLocation,"
                             "routes.legs.steps.endLocation")

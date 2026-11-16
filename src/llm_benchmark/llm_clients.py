@@ -77,7 +77,9 @@ def _gemini(cfg, system_prompt, user_prompt, schema, condition) -> LLMResult:
 
     with _client_lock:
         if cfg["api_key_env"] not in _gemini_clients:
-            _gemini_clients[cfg["api_key_env"]] = genai.Client(api_key=load_env_key(cfg["api_key_env"]))
+            _gemini_clients[cfg["api_key_env"]] = genai.Client(
+                api_key=load_env_key(cfg["api_key_env"]),
+                http_options=types.HttpOptions(timeout=C.V2_LLM_TIMEOUT_S * 1000))   # a stuck request is retried
     client = _gemini_clients[cfg["api_key_env"]]
 
     cond = cfg["conditions"][condition]
