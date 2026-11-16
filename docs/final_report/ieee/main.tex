@@ -28,7 +28,7 @@
 % Working title. It may change.
 \title{Benchmarking LLMs against Navigation Tools}
 
-\author{\IEEEauthorblockN{Ishan Mehta}
+\author{\IEEEauthorblockN{Ishan Kaustubh Mehta}
 \IEEEauthorblockA{\textit{Department of Computer Science}\\
 \textit{BITS Pilani, K K Birla Goa Campus}\\
 Goa, India\\
@@ -89,13 +89,13 @@ Earlier studies on how the wording of a prompt changes LLM answers.
 \section{Traffic Data Collection}
 
 \subsection{Road List}
-The official city lists of arterial and sub-arterial roads, and how they became one table.
+The Bruhat Bengaluru Mahanagara Palike (BBMP), the city's municipal body, publishes two lists of major roads: 80 arterial roads and 285 sub-arterial roads. Both lists are PDF files, so we typed them into one table of 365 roads. Each row gives the road's name, origin, destination, the places it passes through, its approximate length and its zone.
 
 \subsection{Geocoding and Filtering}
-How vague place names were filtered out and the rest turned into chains of coordinates.
+Each road was written as a chain of places: the origin, the places in between, and the destination. Some entries cannot be placed on a map, such as ``Ring Road'', ``BBMP Limit'' or ``Start''. We removed these with a short blocklist. We also removed any name containing ``Road'' unless it also had a landmark word such as ``Cross'', ``Circle'', ``Gate'' or ``Temple'', because a road name alone does not mark a point. The remaining names were converted to latitude and longitude with the Google Geocoding API, with ``Bangalore, India'' added to each name.
 
 \subsection{Removing Redundant Routes}
-Which routes were dropped because of incomplete chains, shared endpoints, or being part of a longer route.
+Table~\ref{tab:route_counts} shows how the list shrank. Most of the loss came from incomplete chains: 87 roads were left with fewer than two located points and could not form a route. Two further rules removed overlaps. Coordinates were first rounded to four decimal places, about 11~m. If two routes started and ended at the same rounded points, we kept the one with more points in between. If a route's chain appeared as an unbroken part of a longer chain, we dropped it. These two rules removed only five routes, which left 273 routes for the traffic queries.
 
 \begin{table}[!htb]
 \caption{Road List at Each Cleaning Step}
@@ -105,16 +105,16 @@ Which routes were dropped because of incomplete chains, shared endpoints, or bei
 \hline
 Step & Arterial & Sub-arterial & Total \\
 \hline
-Official road list & & & \\
-After geocoding and filtering & & & \\
-After removing shared endpoints & & & \\
-After removing routes inside longer routes & & & \\
+Official road list & 80 & 285 & 365 \\
+After geocoding and filtering & 74 & 204 & 278 \\
+After removing shared endpoints & 74 & 200 & 274 \\
+After removing routes inside longer routes & 74 & 199 & 273 \\
 \hline
 \end{tabular}
 \end{table}
 
 \subsection{Route Geometries}
-How the coordinate chains were matched to OpenStreetMap roads and drawn in QGIS.
+To check the routes on a map, we joined each pair of neighbouring points by the shortest path on the OpenStreetMap road network of Bangalore, loaded with OSMnx. Here the network was treated as two-way, because one-way streets left some pairs with no path. These lines were used only for viewing in QGIS (Fig.~\ref{fig:route_geometries}) and not for any measurement.
 
 \begin{figure}[!htb]
 \centering
@@ -123,34 +123,13 @@ How the coordinate chains were matched to OpenStreetMap roads and drawn in QGIS.
 \label{fig:route_geometries}
 \end{figure}
 
-\subsection{Repeated Traffic Queries}
-How the Google Routes API was queried, with which settings, and why traffic data was collected more than once.
-
-\begin{table}[!htb]
-\caption{Traffic Data Collections}
-\label{tab:collections}
-\centering
-\begin{tabular}{lcc}
-\hline
-Detail & First collection & Second collection \\
-\hline
-Dates & & \\
-Days covered & & \\
-Snapshots & & \\
-Query interval & & \\
-Routes per snapshot & & \\
-Via-point setting & & \\
-Level of detail & & \\
-Used for & & \\
-\hline
-\end{tabular}
-\end{table}
+\subsection{Traffic Queries}
+We sent all 273 routes to the Google Routes API every two hours. Each request gave the route's origin, destination and in-between points, in driving mode with traffic-aware routing. The in-between points were marked as stops, so Google returned each stretch between two stops as a separate \emph{leg} with its own travel time. Without stops, a whole route comes back as one leg, and a slow stretch cannot be located. No departure time was set, so every answer is Google's estimate for the moment of the request. For each leg we stored the travel time with traffic, a second time that Google calls the static duration (Section~\ref{sec:static}), the distance, the route line and the traffic state (normal, slow or jam) along the line.
 
 \subsection{From Raw Responses to Tables}
-How the large JSON files were flattened into road legs, and how each leg was given a stable ID.
+The raw responses are large nested JSON files, so we read them one file at a time and flattened them into two tables. Each leg was identified by its start and end points, rounded to four decimal places and hashed. This gave a stable ID even when Google returned slightly different coordinates. The first table lists every leg once, with its position and length. The second has one row per leg per query, with the time, the travel time with traffic and the static duration. In all, the data contains 689 distinct legs.
 
-\subsection{Problems Along the Way}
-Steps versus legs, route lines that change between queries, and road stretches whose values never changed.
+Google reports the travel time with traffic for a whole leg, not for the turns inside it. Splitting a leg's time across its parts by distance would assume the same traffic everywhere on the leg, so the leg is our smallest unit. We treat each leg as a fixed sensor that is read every two hours.
 
 % ======================================================================
 \section{Traffic Analysis}
@@ -174,7 +153,7 @@ Variation & & \\
 \end{tabular}
 \end{table}
 
-\subsection{What Google's Static Duration Means}
+\subsection{What Google's Static Duration Means}\label{sec:static}
 What this field represents, how that affects the delay and congestion measures, and what is used instead.
 
 \subsection{Traffic by Time of Day}
