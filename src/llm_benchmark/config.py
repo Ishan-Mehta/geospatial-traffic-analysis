@@ -288,7 +288,7 @@ V2_GMAPS_SUBROUTE_FIELD_MASK = (
 V2_LLM_MODELS["openai_main"] = {
     # Waiting for API access. Set model_name, then "reasoning_effort" to the model's lowest setting and
     # send_temperature to False if the model refuses a temperature. Fill in the prices for the cost estimate.
-    "provider": "openai", "model_name": None, "api_key_env": "OPENAI_API_KEY",
+    "provider": "openai", "model_name": None, "api_key_env": "CHATGPT_API_KEY",
     "temperature": 1.0, "send_temperature": True,
     "conditions": {"A": {"reasoning_effort": None}},
     "price_in_per_m": 0.0, "price_out_per_m": 0.0,
