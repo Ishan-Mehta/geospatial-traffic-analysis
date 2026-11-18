@@ -372,7 +372,7 @@ def main():
     for val, sub in m0.groupby("day_type"):
         rows.append(summarise(sub, route, f"day_type={val}"))
     sat = m0[m0.day == "Saturday"]
-    rows.append(summarise(sat, route, "Saturday (holiday 10 Oct)"))
+    rows.append(summarise(sat, route, "Saturday (holiday 10 Oct)" if C.V2_ROUND == "1" else "Saturday"))
     rows.append(summarise(m0[m0.day == "Sunday"], route, "Sunday"))
     summary = pd.DataFrame(rows)
     summary.to_csv(res_dir / "summary_by_group.csv", index=False)

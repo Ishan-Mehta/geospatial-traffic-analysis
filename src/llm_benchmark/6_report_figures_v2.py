@@ -68,7 +68,7 @@ def fig_routes_map(out, plt):
 
 
 def fig_time_by_slot(out, plt, model):
-    c = pd.read_csv(C.V2_DIR / "results" / f"comparison_{model}_A.csv")
+    c = pd.read_csv(C.V2_OUT_DIR / "results" / f"comparison_{model}_A.csv")
     c = c[(c.sample_idx == 0) & (~c.is_weekend)]
     slots = ["AM_PEAK", "MID_DAY", "PM_PEAK", "NIGHT"]
     g = c.groupby("slot_id").g_min.median().reindex(slots)
@@ -98,7 +98,7 @@ def fig_time_by_slot(out, plt, model):
 
 
 def _comparison(model):
-    c = pd.read_csv(C.V2_DIR / "results" / f"comparison_{model}_A.csv")
+    c = pd.read_csv(C.V2_OUT_DIR / "results" / f"comparison_{model}_A.csv")
     return c[c.sample_idx == 0].copy()
 
 
@@ -134,7 +134,8 @@ def fig_day_shape(out, plt, model):
         ax.set_xticks(x, [SLOT_LABELS[s] for s in SLOTS])
         _finish(ax, name)
     axes[0].set_ylabel("times longer than the same trip\nat weekday night")
-    axes[0].set_ylim(0.7, 2.6)
+    top = max(v[c].max() for v in rows.values() for c in ("google_rel", "gemini_rel"))
+    axes[0].set_ylim(0.7, max(2.6, top + 0.25))
     axes[0].set_xlim(-0.3, 3.6)
     axes[0].legend(frameon=False, loc="upper left", fontsize=9)
     fig.tight_layout()
@@ -144,11 +145,11 @@ def fig_day_shape(out, plt, model):
 
 
 def fig_rush_multiplier(out, plt, model):
-    r = pd.read_csv(C.V2_DIR / "results" / f"route_metrics_{model}_A.csv")
+    r = pd.read_csv(C.V2_OUT_DIR / "results" / f"route_metrics_{model}_A.csv")
     c = _comparison(model).drop_duplicates("route_id").set_index("route_id")
     r = r.join(c[["origin_name", "dest_name", "band_google"]], on="route_id")
     fig, ax = plt.subplots(figsize=(5.6, 4.6))
-    lim = (0.85, 3.25)
+    lim = (0.85, max(3.25, float(r.pn_llm.max()) + 0.15))
     ax.plot(lim, lim, color=INK2, lw=0.8, ls=":", zorder=1)
     ax.text(2.55, 2.42, "Gemini = Google", rotation=38, fontsize=8.5, color=INK2)
     for (band, lab), colr in zip(BANDS.items(), CAT3):
@@ -258,7 +259,7 @@ def fig_google_heatmap(out, plt):
 
 def fig_where_worst(out, plt, model):
     """Route-level medians: typical miss = exp(median |log ratio|) - 1, then the median over routes in the group."""
-    r = pd.read_csv(C.V2_DIR / "results" / f"route_metrics_{model}_A.csv")
+    r = pd.read_csv(C.V2_OUT_DIR / "results" / f"route_metrics_{model}_A.csv")
     pct = lambda col: np.exp(col) - 1
     fig, axes = plt.subplots(1, 2, figsize=(8.8, 3.6), gridspec_kw={"width_ratios": [1, 1.25]})
     ax = axes[0]
@@ -305,7 +306,7 @@ def main():
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     style(plt)
-    out = C._PROJECT_ROOT / "docs" / "benchmark_v2" / "report" / "figures"
+    out = C._PROJECT_ROOT / "docs" / ("round2" if C.V2_ROUND == "2" else "benchmark_v2/report") / "figures"
     out.mkdir(parents=True, exist_ok=True)
     if "B" in which:
         print(fig_time_by_slot(out, plt, args.model).to_string())
