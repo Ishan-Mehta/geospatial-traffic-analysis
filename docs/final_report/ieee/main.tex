@@ -630,33 +630,53 @@ Share labelled heavy & & & \\
 % ======================================================================
 \section{Discussion and Limitations}
 
-\subsection{What the LLMs Know}
-What the results suggest about LLM knowledge. Unproven explanations appear only as possibilities.
+% ChatGPT results are not in yet. When they arrive, add one sentence per paragraph
+% on whether ChatGPT shows the same pattern, and rename the first subsection.
+\subsection{What Gemini Knows}
+Gemini knows the city's places and road names. No route starts or ends at a landmark that Gemini misplaced, and 92\,\% of the distinct road names it gave are found in our reference lists. It does not know which of these roads a driver would take: it names about a fifth of the roads on Google's route, and the overlap of the two road lists is only 0.17. Its distances are close, with a typical miss of 15\,\%, and slightly long (median ratio 1.08).
+
+Travel time is weaker, with a typical miss of 26\,\%. The median time ratio of 1.01 looks accurate only because two errors cancel: Gemini is too slow in rush hour and too fast at night. On weekdays it makes the same trip 2.03 times longer at 08:00 and 2.75 times longer at 18:00 than at 23:00, while Google predicts 1.13 and 1.52. Gemini's rush-hour multiplier is larger than Google's on all 72 routes, and the two multipliers hardly agree on which routes are worst (rank correlation 0.11 across routes). Its traffic labels follow the clock: every weekday 18:00 query is ``heavy'' and every 23:00 query ``light''. Gemini therefore orders a route's 28 times roughly as Google does (median rank correlation 0.81), because both put 18:00 slowest and 23:00 fastest, but it adds about the same rush-hour penalty to every road. In short, it knows the clock better than the road. Repeat answers differ by only about 6\,\% in time, so these errors are systematic rather than random.
+
+The largest gap is at 08:00. Google predicts weekday traffic at 08:00 only 13\,\% above night, and the traffic data of Section~IV also shows no sharp morning peak. One possibility is that Bangalore's morning peak comes later than 08:00, so a model that treats 08:00 as rush hour is early; we did not ask at other morning times, so this remains untested. The route from Yeshwanthpur Metro to Peenya Metro is an exception in both weeks of Google data: Google predicts it slower at 23:00 than at 08:00, while Gemini, following the clock, predicts the opposite. Heavy goods traffic at night near the Peenya industrial area is one possible reason.
+
+The road-by-road answers show that a good total does not mean good parts. Gemini's road distances and times always add up to its own totals, yet on roads that could be paired with Google's the typical miss is about 60\,\% for both distance and time, against 15\,\% and 26\,\% for whole routes. Errors on single roads cancel in the sum. A possible reading is that Gemini starts from a sense of the whole trip and splits it over roads, rather than adding up roads it knows; our data cannot tell these apart.
+
+Short trips are the hardest. For routes of 1--5~km the typical time miss is 43\,\%, against 22\,\% for routes of 12~km or more ($p=0.0002$), and the distance miss is 31\,\% against 12\,\%. On routes of 5~km or more, Gemini's distances are closer on main roads than on smaller ones (11\,\% against 23\,\%, $p=0.006$), but its times are not ($p=0.73$). Routes that pass through the most variable legs of Section~IV were not harder (25\,\% against 24\,\%, $p=0.48$).
+
+Prompt wording explains only part of the rush-hour bias. On the ten repeat routes, the earlier prompt, which named ``Morning Rush'' and peak-hour traffic, made Gemini call 98\,\% of weekday 08:00 queries ``heavy'', against 60\,\% with the neutral prompt, and raised the typical 08:00 time from 39 to 45~minutes. With neutral wording, rush hour is still about twice the night time. The answer format matters as much: asking for road-by-road times raised this ratio from 1.96 to 2.37 and shortened night trips. A study of LLM travel times should therefore report both the wording and the answer format.
 
 \subsection{Earlier Expectations}
-How the results compare with what we expected at the start of the project.
+Table~\ref{tab:expectations} compares the results with what we expected at the start of the project. Two expectations, that giving the model map context would help and that an India-focused map service would match Google more closely, were not tested in this benchmark.
 
 \begin{table}[!htb]
 \caption{Earlier Expectations and Outcomes}
 \label{tab:expectations}
 \centering
-\begin{tabular}{L{3.6cm}L{2.2cm}L{1.8cm}}
+\footnotesize
+\begin{tabular}{L{2.5cm}L{1.6cm}L{3.5cm}}
 \hline
 What we expected & What we found & Evidence \\
 \hline
-Main roads easier than side roads & & \\
-Travel times weaker than distances & & \\
-Added road context helps & & \\
-India-specific tools do better & & \\
+Main roads easier than side roads & Distance yes, time no & Routes of 5~km or more: distance miss 11\,\% vs 23\,\% ($p=0.006$); time $p=0.73$ \\
+Travel times weaker than distances & Yes & Typical miss 26\,\% for time, 15\,\% for distance \\
+Routes through variable legs harder & No & Time miss 25\,\% vs 24\,\% ($p=0.48$) \\
+Added road context helps & Not tested & -- \\
+India-specific tools do better & Not tested & -- \\
 \hline
 \end{tabular}
 \end{table}
 
 \subsection{Practical Meaning}
-Where an LLM's answer could be useful to a traveller, and where it should not be trusted.
+Compared with Google, Gemini gives a usable rough distance between well-known places more than 5~km apart. Its travel times are biased in a predictable way: on weekdays about 30\,\% too slow at 08:00 and 18:00 and 25\,\% too fast at 23:00. Its road-by-road distances and times should not be trusted. A one-line rule that knows the exact coordinates, the straight-line distance times 1.22 at a typical speed, misses Google by 18\,\% in time and 10\,\% in distance, less than Gemini's 26\,\% and 15\,\%, and Gemini beats it on only 43\,\% of queries for time. Its confident ``heavy traffic'' label adds little beyond the time of day already in the question.
 
 \subsection{Limitations}
-Predicted traffic, limited dates, remaining prompt effects, few side-road routes, name matching and data terms.
+\emph{Reference.} Google's times are predictions for one week, not measured drives, so ``close to Google'' is not the same as ``close to the real trip''. The earlier prompt was compared against a different Google week. Gemini's questions contain no date, so its answers under the two prompts can be compared directly, and Google's own pattern was almost the same in both weeks.
+
+\emph{Models and prompts.} Only Gemini has been tested so far, at one setting (lowest reasoning, temperature 1.0), and results may change with later model versions. The neutral prompt still asks the model to consider the time of day. The earlier and neutral prompts differ in several places at once; the format-control run separates the answer format from the wording, but not the individual wording changes from each other.
+
+\emph{Routes and roads.} Only 12 routes run mainly on smaller roads, and only six of them are 5~km or longer, so road-type results are indicative. Road matching depends on names: Google may call a road ``NH 44'' where others say ``Outer Ring Road'', so validity and overlap are lower bounds, and paired roads cover a median of 37\,\% of Google's route length.
+
+\emph{Traffic data.} The traffic data of Sections~III and IV covers a short period, its readings are Google's estimates at the moment of each request, and its static duration is not an empty-road time. The simple formula's speeds come from this data, and the formula knows the exact coordinates, which the LLMs do not. Google's terms do not allow us to publish the raw responses.
 
 % ======================================================================
 \section{Conclusion and Future Work}
