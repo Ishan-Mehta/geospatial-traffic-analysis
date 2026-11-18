@@ -11,7 +11,7 @@ Step 6 (v2) — report figures for the professor update (Phase 5). Offline, NO A
   fig_H_where_worst.png     typical miss by trip length; main vs smaller roads on trips >= 5 km
 
 Inputs: gmaps/gmaps_responses.jsonl, od_pairs.csv, results/comparison_<model>_A.csv, the OSM graph (basemap).
-Output: docs/benchmark_v2/report/figures/. Colours: dataviz reference palette slots 1–2 (validated, CVD-safe).
+Output: docs/benchmark/round1/figures/ (Round 1) or docs/benchmark/round2/figures/<model>/ (Round 2). Colours: dataviz reference palette slots 1–2 (validated, CVD-safe).
 Usage: python 6_report_figures_v2.py [--model KEY] [--only B,C,...]
 """
 
@@ -68,7 +68,7 @@ def fig_routes_map(out, plt):
 
 
 def fig_time_by_slot(out, plt, model):
-    c = pd.read_csv(C.V2_OUT_DIR / "results" / f"comparison_{model}_A.csv")
+    c = pd.read_csv(C.results_dir(model) / f"comparison_{model}_A.csv")
     c = c[(c.sample_idx == 0) & (~c.is_weekend)]
     slots = ["AM_PEAK", "MID_DAY", "PM_PEAK", "NIGHT"]
     g = c.groupby("slot_id").g_min.median().reindex(slots)
@@ -98,7 +98,7 @@ def fig_time_by_slot(out, plt, model):
 
 
 def _comparison(model):
-    c = pd.read_csv(C.V2_OUT_DIR / "results" / f"comparison_{model}_A.csv")
+    c = pd.read_csv(C.results_dir(model) / f"comparison_{model}_A.csv")
     return c[c.sample_idx == 0].copy()
 
 
@@ -145,7 +145,7 @@ def fig_day_shape(out, plt, model):
 
 
 def fig_rush_multiplier(out, plt, model):
-    r = pd.read_csv(C.V2_OUT_DIR / "results" / f"route_metrics_{model}_A.csv")
+    r = pd.read_csv(C.results_dir(model) / f"route_metrics_{model}_A.csv")
     c = _comparison(model).drop_duplicates("route_id").set_index("route_id")
     r = r.join(c[["origin_name", "dest_name", "band_google"]], on="route_id")
     fig, ax = plt.subplots(figsize=(5.6, 4.6))
@@ -259,7 +259,7 @@ def fig_google_heatmap(out, plt):
 
 def fig_where_worst(out, plt, model):
     """Route-level medians: typical miss = exp(median |log ratio|) - 1, then the median over routes in the group."""
-    r = pd.read_csv(C.V2_OUT_DIR / "results" / f"route_metrics_{model}_A.csv")
+    r = pd.read_csv(C.results_dir(model) / f"route_metrics_{model}_A.csv")
     pct = lambda col: np.exp(col) - 1
     fig, axes = plt.subplots(1, 2, figsize=(8.8, 3.6), gridspec_kw={"width_ratios": [1, 1.25]})
     ax = axes[0]
@@ -306,7 +306,7 @@ def main():
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     style(plt)
-    out = C._PROJECT_ROOT / "docs" / ("round2" if C.V2_ROUND == "2" else "benchmark_v2/report") / "figures"
+    out = C.report_figures_dir(args.model)
     out.mkdir(parents=True, exist_ok=True)
     if "B" in which:
         print(fig_time_by_slot(out, plt, args.model).to_string())

@@ -1,0 +1,21 @@
+,Gemini (gemini-3.8-flash)
+queries,2016.0
+distance_ratio,1.078
+distance_typical_miss,0.142
+time_ratio,1.008
+time_typical_miss,0.231
+time_within_10pct,0.23
+weekday_time_ratio_AM_PEAK,1.294
+weekday_time_ratio_MID_DAY,0.975
+weekday_time_ratio_PM_PEAK,1.321
+weekday_time_ratio_NIGHT,0.75
+time_of_day_pn_llm_median,2.397
+time_of_day_pn_google_median,1.344
+within_route_time_rho_median,0.813
+label_spearman_all,0.732
+road_jaccard,0.172
+share_of_google_roads_named,0.196
+road_names_valid,0.961
+repeat_time_cv,0.058
+subroute_time_typical_miss,0.472
+subroute_distance_typical_miss,0.483

@@ -10,10 +10,11 @@ A Gemini road is paired with a Google sub-route when the names match (fuzzy scor
 the same rule as the Phase-4 road comparison). Google often uses highway numbers ("NH 44") where other sources use
 street names ("Outer Ring Road"), so pairing is partial; coverage is reported.
 
-Usage: BENCHMARK_ROUND=2 python 7_subroutes_r2.py
-Outputs (results/): subroute_pairs_<model>.csv (git-ignored), summary_subroutes.csv
+Usage: BENCHMARK_ROUND=2 python 7_subroutes_r2.py [--model KEY]
+Outputs (results/<model>/): subroute_pairs_<model>.csv, summary_subroutes.csv
 """
 
+import argparse
 import importlib
 import math
 
@@ -29,8 +30,11 @@ cmp_ = importlib.import_module("5_compare_results_v2")
 def main():
     if C.V2_ROUND != "2":
         raise SystemExit("Round 2 only (set BENCHMARK_ROUND=2).")
-    model = C.V2_ACTIVE_LLM
-    res_dir = C.V2_OUT_DIR / "results"
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--model", default=C.V2_ACTIVE_LLM)
+    model = ap.parse_args().model
+    res_dir = C.results_dir(model)
+    res_dir.mkdir(parents=True, exist_ok=True)
     google = {(r["route_id"], r["day"], r["slot_id"]): r
               for r in read_jsonl(C.V2_GMAPS_DIR / C.V2_GMAPS_SUBROUTE_RESPONSES_JSONL) if r.get("status") == "ok"}
     llm = {(r["route_id"], r["day"], r["slot_id"]): r["parsed_response"]

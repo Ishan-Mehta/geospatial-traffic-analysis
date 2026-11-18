@@ -104,7 +104,7 @@ GMAPS_FIELD_MASK = (
 
 
 # =====================================================================
-#  V2 BENCHMARK (branch benchmark-v2) — see docs/benchmark_v2/
+#  V2 BENCHMARK (rounds 1 and 2) — see docs/benchmark/
 #  v1 constants above are left unchanged for the pilot section.
 # =====================================================================
 V2_DIR = _PROJECT_ROOT / "data" / "benchmark_v2"
@@ -268,7 +268,7 @@ V2_GROUNDING_RULE = "coords_and_locality"             # misplaced if far AND loc
 
 
 # =====================================================================
-#  ROUND 2 (docs/round2/ROUND2_PLAN.md) — switched on with BENCHMARK_ROUND=2 in the environment.
+#  ROUND 2 (docs/benchmark/round2/) — switched on with BENCHMARK_ROUND=2 in the environment.
 #  Same 72 routes and coordinates; new outputs in data/benchmark_round2/. Without the variable
 #  every setting above stays as it was, so Round 1 files can never be overwritten by a Round 2 run.
 # =====================================================================
@@ -311,4 +311,15 @@ if V2_ROUND == "2":
                             "routes.legs.steps.staticDuration,routes.legs.steps.startLocation,"
                             "routes.legs.steps.endLocation")
     V2_LLM_MODELS["gemini_38_flash"]["est_tokens"]["A"] = (200, 320)   # road-by-road answers are longer
+
+
+def results_dir(model: str):
+    """Comparison tables of the active round. Round 2 keeps one folder per LLM so models never overwrite each other."""
+    return V2_OUT_DIR / "results" if V2_ROUND == "1" else V2_OUT_DIR / "results" / model
+
+
+def report_figures_dir(model: str):
+    """Report-ready figures: docs/benchmark/round1/figures, or docs/benchmark/round2/figures/<model>."""
+    base = _PROJECT_ROOT / "docs" / "benchmark"
+    return base / "round1" / "figures" if V2_ROUND == "1" else base / "round2" / "figures" / model
 

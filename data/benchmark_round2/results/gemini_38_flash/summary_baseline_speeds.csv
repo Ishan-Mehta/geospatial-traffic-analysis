@@ -1,0 +1,9 @@
+slot,weekend,stage2_median_kmh,n_snapshots
+AM_PEAK,False,21.14,1046
+AM_PEAK,True,22.79,1046
+MID_DAY,False,18.95,1046
+MID_DAY,True,18.57,1046
+PM_PEAK,False,16.25,523
+PM_PEAK,True,16.86,523
+NIGHT,False,24.96,3121
+NIGHT,True,24.35,1044

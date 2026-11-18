@@ -10,7 +10,7 @@ Outputs: results/comparison_<model>_<cond>.csv   one row per query × sample (gi
          results/road_name_matches_<model>.csv    each distinct LLM road name → best OSM name (git-ignored)
          results/summary_*.csv                    aggregate tables (committed)
          figures/phase4/r01…r11 plots             (committed)
-Metric definitions: docs/benchmark_v2/METHODOLOGY.md §7. Usage: python 5_compare_results_v2.py [--model KEY] [--condition A]
+Metric definitions: docs/benchmark/METHODOLOGY.md §7. Usage: python 5_compare_results_v2.py [--model KEY] [--condition A]
 """
 
 import argparse
@@ -113,7 +113,7 @@ class RoadMatcher:
                 if not cand:
                     res = (n, None, 0.0, "no_candidate")
                 else:
-                    b = max(cand, key=lambda c: (road_score(n, c), -abs(len(c) - len(n))))
+                    b = max(sorted(cand), key=lambda c: (road_score(n, c), -abs(len(c) - len(n))))   # sorted: ties resolve the same way every run
                     sc = road_score(n, b)
                     res = (n, b if sc >= MATCH_MIN else None, round(sc, 1), "fuzzy")
         self.cache[n] = res
@@ -234,8 +234,8 @@ def main():
     args = ap.parse_args()
     t0 = time.time()
     rng = np.random.default_rng(RNG_SEED)
-    res_dir = C.V2_OUT_DIR / "results"
-    fig_dir = C.V2_FIGURES_DIR / "phase4"
+    res_dir = C.results_dir(args.model)
+    fig_dir = C.V2_FIGURES_DIR / "phase4" if C.V2_ROUND == "1" else C.V2_FIGURES_DIR / "phase4" / args.model
     res_dir.mkdir(parents=True, exist_ok=True)
     tag = f"{args.model}_{args.condition}"
 

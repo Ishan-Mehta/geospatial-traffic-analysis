@@ -1,0 +1,16 @@
+,value
+queries,2016.0
+google_subroutes_per_query_median,6.0
+llm_roads_per_query_median,4.0
+queries_with_any_pair_share,0.9
+paired_roads_per_query_mean,1.72
+google_distance_covered_by_pairs_median,0.37
+pairs,3462.0
+pair_distance_ratio_median,1.196
+pair_distance_abs_pct_error_median,0.483
+pair_time_ratio_median,1.206
+pair_time_abs_pct_error_median,0.472
+pair_time_ratio_median_AM_PEAK,1.277
+pair_time_ratio_median_MID_DAY,1.133
+pair_time_ratio_median_PM_PEAK,1.488
+pair_time_ratio_median_NIGHT,0.887

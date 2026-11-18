@@ -1,0 +1,6 @@
+subset,version,routes,queries,peak_night_ratio,distance_km_median,weekday_min_AM_PEAK,weekday_heavy_AM_PEAK,weekday_min_MID_DAY,weekday_heavy_MID_DAY,weekday_min_PM_PEAK,weekday_heavy_PM_PEAK,weekday_min_NIGHT,weekday_heavy_NIGHT,time_vs_round1_median
+all routes,round1,72,2016,2.152,11.5,45.0,0.922,35.0,0.0,55.0,1.0,22.0,0.0,
+all routes,round2,72,2016,2.397,11.2,40.0,0.556,32.0,0.0,54.5,1.0,19.0,0.0,0.909
+10 repeat routes,round1,10,280,2.068,10.5,45.0,0.98,35.0,0.0,55.0,1.0,22.0,0.0,1.0
+10 repeat routes,control,10,280,1.955,11.0,39.0,0.6,35.0,0.0,50.0,1.0,22.0,0.0,1.0
+10 repeat routes,round2,10,280,2.366,10.75,39.0,0.6,32.0,0.0,53.0,1.0,20.0,0.0,0.909

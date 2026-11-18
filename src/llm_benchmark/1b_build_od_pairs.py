@@ -18,7 +18,7 @@ Subcommands
                            --source approx = rehearsal on the seed's approximate coordinates
                            (written to data/benchmark_v2/rehearsal_approx/, never used in results).
 
-Definitions and thresholds: docs/benchmark_v2/METHODOLOGY.md, values in config.py (V2 section).
+Definitions and thresholds: docs/benchmark/METHODOLOGY.md, values in config.py (V2 section).
 """
 
 import argparse

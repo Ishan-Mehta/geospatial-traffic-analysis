@@ -1,193 +1,80 @@
-# 🚦 Geospatial Traffic Analysis — Bangalore
+# Benchmarking LLMs against Navigation Tools — Bangalore
 
-A multi-stage geospatial data engineering and statistical analysis pipeline for studying Bangalore's road traffic patterns. The system continuously collects live traffic data from Google Maps, processes it into structured datasets, and performs congestion/volatility analysis with rich visualizations.
+How close can a large language model, using only its own knowledge, get to Google Maps on routes, distances and
+travel times in Bangalore? The project has two parts:
 
-## 📋 Table of Contents
+1. **Traffic data pipeline:** Bangalore's official arterial and sub-arterial roads are geocoded and their Google Maps
+   travel times are collected every two hours, then processed into congestion and variability statistics.
+2. **LLM benchmark:** 72 routes between well-known landmarks, each asked at 08:00, 14:00, 18:00 and 23:00 on every day
+   of a week (2,016 queries). Google Maps (predicted traffic) is the reference; Gemini and ChatGPT get only the place
+   names, day and time, with no map or internet access.
 
-- [Architecture](#architecture)
-- [Pipeline Stages](#pipeline-stages)
-- [Project Structure](#project-structure)
-- [Setup](#setup)
-- [Usage](#usage)
-- [Notes](#notes)
+Ishan Mehta · Supervisor: Prof. Vinayak Naik · Department of Computer Science, BITS Pilani, K K Birla Goa Campus
 
-## Architecture
-
+## Repository layout
 ```
-┌─────────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────────┐     ┌───────────────┐
-│   Preprocess    │────▶│   Scraper    │────▶│   Pipeline   │────▶│    Analysis     │────▶│   Animation   │
-│                 │     │              │     │              │     │                  │     │               │
-│ BBMP Road CSV   │     │ Google Maps  │     │ JSON → CSV   │     │ Congestion &     │     │ GeoPackage    │
-│ → Geocoded      │     │ Routes API   │     │ Flattening   │     │ Bottleneck Stats │     │ Export for    │
-│   Coordinates   │     │ (every 2hr)  │     │ + Spatial    │     │ + Visualizations │     │ QGIS Temporal │
-│                 │     │              │     │   Hashing    │     │                  │     │ Animation     │
-└─────────────────┘     └──────────────┘     └──────────────┘     └──────────────────┘     └───────────────┘
+src/
+  preprocess/        1  road list -> geocoded coordinate chains (helpers/: OSM graph, WKT export, package check)
+  scraper/           2  Routes API scrape every 2 h (scraper_v1/: earlier version)
+  pipeline/          3  raw JSON -> flattened CSV tables
+  analysis/          4  congestion, delay and variability statistics
+  animation/         5  GeoPackage export for QGIS time animations
+  llm_benchmark/     6  the benchmark (scripts numbered in run order; config.py holds every setting)
+    prompts/            prompt files sent to the LLMs
+    v1_pilot/           first version of the benchmark (superseded, kept for reference)
+docs/
+  benchmark/         methodology, exact prompts and requests, data dictionary, API setup, pilot audit
+    round1/          original prompt: results, findings, figures
+    round2/          neutral prompt, sub-routes, Gemini (ChatGPT pending): results, prompts, figures
+  pipeline/          pipeline flowchart
+  final_report/      the report (IEEE format, LaTeX)
+data/                inputs and outputs (raw Google and LLM data is not published, see below)
+  benchmark_v2/      benchmark inputs (landmarks, routes) and Round 1 outputs
+  benchmark_round2/  Round 2 outputs
+  benchmark/         pilot outputs
+  processed/, raw/   pipeline data
 ```
-
-## Pipeline Stages
-
-### Stage 1 — Preprocessing (`src/preprocess/`)
-Converts BBMP road inventory CSV data into geocoded coordinate chains using the Google Geocoding API. Applies heuristic filtering to clean vague location names and produces optimized route coordinate chains.
-
-**Scripts (run in order):**
-1. `1_geocode_roads.py` — Geocode road names → lat/lng coordinate chains
-2. `2_remove_redundancy_routes.py` — Remove duplicate/overlapping routes
-3. `3_transform_geocode_to_qgis_geometry.py` — Convert to QGIS-compatible geometry
-
-### Stage 2 — Data Collection (`src/scraper/`)
-A daemon script that queries the Google Maps Routes API (`computeRoutes`) with `TRAFFIC_AWARE` routing every 2 hours. Saves raw JSON responses and CSV traffic summaries per run.
-
-### Stage 3 — Data Pipeline (`src/pipeline/`)
-Memory-efficient generator-based pipeline that processes the multi-GB raw JSON dataset. Flattens nested route legs into a unified CSV using MD5-based spatial hashing for deterministic sub-route identification.
-
-### Stage 4 — Statistical Analysis (`src/analysis/`)
-Merges live traffic durations with baseline (static) durations, using OSMnx as a fallback for missing speed-limit data. Generates:
-- Congestion ratio rankings
-- Bottleneck identification (by delay, speed, volatility)
-- Distribution plots (delay, speed, congestion ratio, volatility)
-- Top-N ranked bar charts and scatter plots
-- Network health visualizations
-
-### Stage 5 — QGIS Animation (`src/animation/`)
-Exports selected routes as GeoPackage (`.gpkg`) files with speed-colored traffic segments for temporal animation in QGIS.
-
-### Stage 6 — LLM Route Benchmarking (`src/llm_benchmark/`)
-Benchmarks LLM routing predictions against live Google Maps Routes API data. Tests how accurately LLMs can estimate travel distance, time, and route choice for Bangalore roads using only minimal input (origin, destination, time of day, day of week).
-
-**Scripts (run in order):**
-1. `1_select_benchmark_routes.py` — Stratified selection of test routes by congestion, distance, volatility
-2. `2_reverse_geocode.py` — One-time reverse geocoding of route coordinates to human-readable names
-3. `3_query_llm.py` — Query LLM (Gemini) for route estimates with structured JSON output
-4. `4_query_gmaps.py` — Query Google Maps Routes API for live/future ground truth
-5. `5_compare_results.py` — Compare and compute metrics (distance %, time %, route match score)
-6. `6_visualize_benchmark.py` — Generate benchmark charts and visualizations
-
-**Configuration:** All parameters (route selection counts, time slots, LLM model, etc.) are configurable in `config.py`.
-**Test:** Run `test_pipeline.py` for a single-route end-to-end smoke test.
-
-## Project Structure
-
-```
-geospatial-traffic-analysis/
-├── README.md
-├── requirements.txt
-├── .gitignore
-├── .env.example
-├── docs/
-│   └── flowchart.pdf
-├── src/
-│   ├── preprocess/              # Stage 1: Road geocoding
-│   │   ├── 1_geocode_roads.py
-│   │   ├── 2_remove_redundancy_routes.py
-│   │   ├── 3_transform_geocode_to_qgis_geometry.py
-│   │   └── helpers/
-│   │       ├── check_installed_packages.py
-│   │       ├── graph_bangalore_osm.py
-│   │       └── transform_geocode_to_qgis_wkt.py
-│   ├── scraper/                 # Stage 2: Live data collection (active)
-│   │   └── main.py
-│   ├── scraper_v1/              # Stage 2: Original scraper (legacy)
-│   │   └── main.py
-│   ├── pipeline/                # Stage 3: JSON → CSV flattening
-│   │   └── data_pipeline.py
-│   ├── analysis/                # Stage 4: Statistical analysis
-│   │   └── geospatial_intermediate_analysis.py
-│   ├── animation/               # Stage 5: QGIS GeoPackage export
-│   │   └── animate_selected_routes.py
-│   └── llm_benchmark/           # Stage 6: LLM vs Maps Benchmark
-│       ├── config.py
-│       ├── test_pipeline.py
-│       └── ...
-├── data/
-│   ├── raw/                     # Scraped JSON/CSV data (gitignored)
-│   ├── processed/               # Geocoded road coordinates
-│   ├── benchmark/               # Benchmark inputs/outputs
-│   └── sample_response.json     # Example API response payload
-└── output/                      # Generated results (gitignored)
-```
-
-> **Note:** `src/scraper_v1/` contains the original scraper implementation. `src/scraper/` is the actively used version with enhanced data capture (Google route descriptions, leg-level breakdown). Both are preserved for reference.
 
 ## Setup
-
-### Prerequisites
-- Python 3.9+
-- A [Google Maps Platform API Key](https://console.cloud.google.com/google/maps-apis) with Routes API and Geocoding API enabled
-
-### Installation
-
+Python 3.14 (tested). Keys go in `.env`; see [docs/benchmark/API_KEYS_AND_BILLING.md](docs/benchmark/API_KEYS_AND_BILLING.md).
 ```bash
-# Clone the repository
-git clone https://github.com/<your-username>/geospatial-traffic-analysis.git
-cd geospatial-traffic-analysis
-
-# Create and activate virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
+python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-
-# Configure API key
-cp .env.example .env
-# Edit .env and add your Google Maps API key
+cp .env.example .env        # then add your keys
 ```
 
-## Usage
-
-### 1. Preprocess Road Data
+## Running
+Traffic pipeline (each script from its own folder):
 ```bash
-cd src/preprocess
-python 1_geocode_roads.py        # Geocode roads (interactive menu)
-python 2_remove_redundancy_routes.py
-python 3_transform_geocode_to_qgis_geometry.py
+python src/preprocess/1_geocode_roads.py          # then 2_remove_redundancy_routes.py, 3_transform_geocode_to_qgis_geometry.py
+python src/scraper/main.py                         # runs until stopped; one snapshot every 2 h
+python src/pipeline/data_pipeline.py               # -> output/flattened_traffic_data.csv, master_subroutes.csv
+python src/analysis/geospatial_intermediate_analysis.py
+python src/animation/animate_selected_routes.py --list-routes
 ```
+LLM benchmark (from `src/llm_benchmark/`; paid calls only run without `--dry-run`, and every script has `--help`):
 
-### 2. Start Traffic Data Collection
-```bash
-cd src/scraper
-python main.py
-# Runs continuously, fetching data every 2 hours
-# Press Ctrl+C to stop
-```
+| Step | Script | What it does |
+|---|---|---|
+| 1 | `1b_build_od_pairs.py legs / geocode / pairs` | hotspot legs, landmark geocoding, the 72 routes |
+| 2 | `4_query_gmaps_v2.py`, then `4b_process_gmaps_v2.py` | Google Maps answers and their road names |
+| 3 | `3_query_llm_v2.py benchmark --condition A --part all` | LLM answers (`--model openai_main` for ChatGPT); `--part control` = format control |
+| 4 | `5_compare_results_v2.py` | LLM vs Google: errors, time of day, traffic labels, roads, statistics |
+| 5 | `6_report_figures_v2.py` | report figures |
+| 6 | `7_subroutes_r2.py`, `8_prompt_effect.py`, `9_compare_models.py` | sub-routes, old vs neutral prompt, all models side by side |
 
-### 3. Run Data Pipeline
-```bash
-cd src/pipeline
-python data_pipeline.py
-# Processes all JSON files → flattened_traffic_data.csv + master_subroutes.csv
-```
+Round 1 is the default; set `BENCHMARK_ROUND=2` for Round 2 (`--part subroutes` in step 2 adds the sub-route requests).
+`--mock` runs any query script offline with fake answers.
 
-### 4. Run Statistical Analysis
-```bash
-cd src/analysis
-python geospatial_intermediate_analysis.py
-# Generates bottleneck CSVs and visualization PNGs in ./results/
-```
+## Results so far
+- Gemini knows the landmarks and names real roads; distances are typically within 13–14 % of Google.
+- Travel times are off by about 22 % and follow a city-wide stereotype: rush-hour trips are about twice the night time
+  (Google: about 1.3 times) on all 72 routes. Removing the biased wording from the prompt mainly changed 08:00 and did
+  not remove the stereotype.
+- Details: [Round 1](docs/benchmark/round1/FINDINGS.md) · [Round 2](docs/benchmark/round2/RESULTS.md) ·
+  [pilot audit](docs/benchmark/pilot_v1_audit.md). ChatGPT results will be added once collected.
 
-### 5. Export QGIS Animations (Optional)
-```bash
-cd src/animation
-python animate_selected_routes.py --list-routes          # See available routes
-python animate_selected_routes.py --routes 1,5,10        # Export selected routes
-```
-
-### 6. Run LLM Benchmark
-```bash
-cd src/llm_benchmark
-python 1_select_benchmark_routes.py   # Select benchmark routes
-python 2_reverse_geocode.py           # One-time: geocode coordinates
-python 3_query_llm.py                 # Query LLM for estimates
-python 4_query_gmaps.py               # Query Google Maps for ground truth
-python 5_compare_results.py           # Compare and compute metrics
-python 6_visualize_benchmark.py       # Generate charts
-
-# Or run a quick test with a single route:
-python test_pipeline.py
-```
-
-## Notes
-
-- Raw scraped data (~5GB) is not included in the repository. Place JSON files in `data/raw/` after collection.
-- The analysis module downloads a ~150MB OSMnx graph of Bangalore on first run (cached locally as `.graphml`).
-- All generated results (plots, CSVs, GeoPackages) are `.gitignore`-d as they are fully reproducible from the pipeline.
+## Data availability
+Google Maps Platform terms restrict storing and redistributing its content, so raw Routes and Places responses and the
+LLM answers are not in this repository. The scripts re-collect them, and the data is available on request. Published:
+aggregate tables, figures, and the hand-made landmark list.

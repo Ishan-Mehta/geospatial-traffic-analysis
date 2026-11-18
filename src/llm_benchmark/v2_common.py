@@ -72,7 +72,7 @@ def load_env_key(name: str) -> str:
     load_dotenv(C._PROJECT_ROOT / ".env")
     key = os.getenv(name)
     if not key:
-        sys.exit(f"Error: {name} not found in .env (see docs/benchmark_v2/BILLING_AND_KEYS.md)")
+        sys.exit(f"Error: {name} not found in .env (see docs/benchmark/API_KEYS_AND_BILLING.md)")
     return key
 
 
