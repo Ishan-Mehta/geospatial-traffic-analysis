@@ -28,6 +28,7 @@ import argparse
 import datetime as dt
 import hashlib
 import json
+import math
 import sys
 import time
 from zoneinfo import ZoneInfo
@@ -35,7 +36,7 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 
 import config as C
-from v2_common import (append_jsonl, friendly_api_error, is_fatal_error, load_env_key, read_jsonl,
+from v2_common import (append_jsonl, friendly_api_error, haversine_m, is_fatal_error, load_env_key, read_jsonl,
                        stable_hash, subroute_groups)
 
 IST = ZoneInfo("Asia/Kolkata")
@@ -131,14 +132,38 @@ def request_body(q: dict) -> dict:
     return body
 
 
+def stop_point(polyline: list, point: list, offset_m: float):
+    """The stop moved offset_m along the whole-route line past a road change, with the compass direction of travel
+    there. Road changes are often junctions with flyovers or underpasses, where a stop can snap to the wrong level
+    and add a detour. polyline = [[lng, lat], ...], point = [lat, lng]. Returns ([lat, lng], heading)."""
+    if not polyline or point[0] is None:
+        return point, None
+    i = min(range(len(polyline)), key=lambda k: (polyline[k][1] - point[0]) ** 2 + (polyline[k][0] - point[1]) ** 2)
+    walked = 0.0
+    while i < len(polyline) - 2 and walked < offset_m:
+        walked += haversine_m(polyline[i][1], polyline[i][0], polyline[i + 1][1], polyline[i + 1][0])
+        i += 1
+    (lng1, lat1), (lng2, lat2) = polyline[max(i - 1, 0)], polyline[min(i + 1, len(polyline) - 1)]
+    y = math.sin(math.radians(lng2 - lng1)) * math.cos(math.radians(lat2))
+    x = (math.cos(math.radians(lat1)) * math.sin(math.radians(lat2))
+         - math.sin(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.cos(math.radians(lng2 - lng1)))
+    return [polyline[i][1], polyline[i][0]], round(math.degrees(math.atan2(y, x))) % 360
+
+
 def subroute_body(q: dict, groups: list) -> dict:
-    """Same request as the whole route, with a stopover at the end of every sub-route but the last.
-    Google does not return alternatives for requests with intermediate waypoints."""
+    """Same request as the whole route, with a stopover at the end of every sub-route but the last, approached in the
+    whole route's direction of travel. Google does not return alternatives for requests with intermediate waypoints."""
     body = request_body(q)
     body["computeAlternativeRoutes"] = False
     del body["polylineEncoding"]
-    body["intermediates"] = [{"via": False, "location": {"latLng": {"latitude": g["end"][0], "longitude": g["end"][1]}}}
-                             for g in groups[:-1]]
+    stops = []
+    for g in groups[:-1]:
+        lat, lng = g.get("stop") or g["end"]
+        loc = {"latLng": {"latitude": lat, "longitude": lng}}
+        if g.get("heading") is not None:
+            loc["heading"] = g["heading"]
+        stops.append({"via": False, "location": loc})
+    body["intermediates"] = stops
     return body
 
 
@@ -260,7 +285,10 @@ def subroute_queries(queries: list, jsonl) -> list:
         rec = whole.get((q["route_id"], q["day"], q["slot_id"]))
         if rec:
             rt = rec["routes"][0]
-            out.append({**q, "groups": subroute_groups(rt["steps"]), "whole_route": {
+            groups = subroute_groups(rt["steps"])
+            for g in groups:
+                g["stop"], g["heading"] = stop_point(rt["polyline"], g["end"], C.V2_SUBROUTE_STOP_OFFSET_M[0])
+            out.append({**q, "groups": groups, "polyline": rt["polyline"], "whole_route": {
                 k: rt[k] for k in ("distance_m", "duration_s", "static_duration_s")}})
     return out
 
@@ -305,10 +333,21 @@ def run_subroutes(args, queries: list, d) -> None:
             status, routes_out, err, http = mock_subroutes(q, whole, groups)
         else:
             status, routes_out, err, http = call_google(q, api_key, body, C.V2_GMAPS_SUBROUTE_FIELD_MASK)
+            off = (routes_out[0]["distance_m"] / max(q["whole_route"]["distance_m"], 1) - 1) if routes_out else 0
+            if status == "ok" and abs(off) > C.V2_SUBROUTE_MAX_DIST_DIFF:     # detour at a stop: move stops further in
+                first = {"distance_diff": round(off, 4), "request": body, "routes": routes_out}
+                for g in groups:
+                    g["stop"], g["heading"] = stop_point(q["polyline"], g["end"], C.V2_SUBROUTE_STOP_OFFSET_M[1])
+                body = subroute_body(q, groups)
+                status, routes_out, err, http = call_google(q, api_key, body, C.V2_GMAPS_SUBROUTE_FIELD_MASK)
+                q = {**q, "first_attempt": first}
         rec = {k: q[k] for k in ("route_id", "day", "slot_id", "slot_time", "departure_ist", "departure_utc",
                                  "groups", "whole_route")}
         rec.update({"status": "ok" if status == "ok" else "error", "error": err, "http_status": http,
                     "routes": routes_out, "request": body, "single_road_no_call": len(groups) == 1,
+                    "first_attempt": q.get("first_attempt"),
+                    "distance_diff": round(routes_out[0]["distance_m"] / max(q["whole_route"]["distance_m"], 1) - 1, 4)
+                    if routes_out else None,
                     "query_timestamp": dt.datetime.now(IST).isoformat(timespec="seconds"),
                     "latency_s": round(time.time() - t0, 2), "mock": args.mock, "traffic_semantics": "predicted"})
         append_jsonl(jsonl, rec)

@@ -278,6 +278,8 @@ V2_WEEKEND_BEFORE_MONDAY = False                       # Round 2 week is Sat-Fri
 V2_GMAPS_SUBROUTE_RESPONSES_JSONL = "gmaps_subroute_responses.jsonl"
 V2_SUBROUTE_MIN_M = 300                                # a road stretch shorter than this is merged into its neighbour
 V2_SUBROUTE_MAX_INTERMEDIATES = 10                     # at most 11 sub-routes per query
+V2_SUBROUTE_STOP_OFFSET_M = (40, 150)                  # stop placed this far past the road change; 2nd value for one retry
+V2_SUBROUTE_MAX_DIST_DIFF = 0.02                       # retry once if the legs add up to >2 % more/less than the whole route
 V2_GMAPS_SUBROUTE_FIELD_MASK = (
     "routes.duration,routes.staticDuration,routes.distanceMeters,"
     "routes.legs.distanceMeters,routes.legs.duration,routes.legs.staticDuration,"
