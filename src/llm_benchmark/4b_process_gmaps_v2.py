@@ -32,7 +32,7 @@ PEAKS = ("AM_PEAK", "PM_PEAK")
 
 
 def base_dir(mock: bool):
-    return C.V2_MOCK_DIR if mock else C.V2_DIR
+    return C.V2_MOCK_DIR if mock else C.V2_OUT_DIR
 
 
 def latest_ok(records: list) -> dict:

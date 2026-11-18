@@ -207,7 +207,7 @@ def stage2_speeds() -> dict:
 
 # =====================================================================
 def load(model: str, cond: str):
-    d = C.V2_DIR
+    d = C.V2_OUT_DIR
     gq = pd.read_csv(d / "gmaps" / C.V2_GMAPS_QUERIES_CSV)
     gr = pd.read_csv(d / "gmaps" / C.V2_GMAPS_ROUTES_CSV)
     od = pd.read_csv(C.V2_OD_PAIRS_CSV)
@@ -215,11 +215,14 @@ def load(model: str, cond: str):
     llm = pd.DataFrame([{
         "route_id": r["route_id"], "day": r["day"], "slot_id": r["slot_id"], "sample_idx": r["sample_idx"],
         "llm_km": r["parsed_response"]["estimated_distance_km"], "llm_min": r["parsed_response"]["estimated_time_minutes"],
-        "llm_label": r["parsed_response"]["traffic_awareness"], "llm_roads": r["parsed_response"]["suggested_route"],
+        "llm_label": r["parsed_response"]["traffic_awareness"],
+        "llm_roads": [x["road_name"] if isinstance(x, dict) else x for x in r["parsed_response"]["suggested_route"]],
         "valid_numbers": r.get("valid_numbers", True), "thought_tokens": r.get("thought_tokens"),
         "model_version": r.get("model_version")} for r in recs])
     llm = llm.drop_duplicates(["route_id", "day", "slot_id", "sample_idx"], keep="last")
     flags_path = C.V2_LLM_DIR / f"{model}_grounding_route_flags.csv"
+    if not flags_path.exists():                       # Round 2 reuses the Round 1 landmark check for Gemini
+        flags_path = C.V2_DIR / "llm" / f"{model}_grounding_route_flags.csv"
     flags = pd.read_csv(flags_path)[["route_id", "grounding_flag"]] if flags_path.exists() else None
     return gq, gr, od, llm, flags
 
@@ -231,7 +234,7 @@ def main():
     args = ap.parse_args()
     t0 = time.time()
     rng = np.random.default_rng(RNG_SEED)
-    res_dir = C.V2_DIR / "results"
+    res_dir = C.V2_OUT_DIR / "results"
     fig_dir = C.V2_FIGURES_DIR / "phase4"
     res_dir.mkdir(parents=True, exist_ok=True)
     tag = f"{args.model}_{args.condition}"

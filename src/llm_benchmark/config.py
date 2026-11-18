@@ -295,8 +295,11 @@ V2_LLM_MODELS["openai_main"] = {
     "est_tokens": {"A": (200, 320)},
     "min_interval_s": 0.5,
 }
+V2_OUT_DIR = V2_DIR                                    # where gmaps/, results/ and figures/ of the active round live
 if V2_ROUND == "2":
     V2_ROUND2_DIR = _PROJECT_ROOT / "data" / "benchmark_round2"
+    V2_OUT_DIR = V2_ROUND2_DIR
+    V2_FIGURES_DIR = V2_ROUND2_DIR / "figures"
     V2_GMAPS_DIR = V2_ROUND2_DIR / "gmaps"
     V2_LLM_DIR = V2_ROUND2_DIR / "llm"
     V2_MOCK_DIR = V2_ROUND2_DIR / "mock"
