@@ -11,6 +11,8 @@
 \usepackage{textcomp}
 \usepackage{array}
 \usepackage{flafter}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta}
 
 % Table settings: L{width} and C{width} are left-aligned and centred columns of a fixed width.
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
@@ -53,19 +55,43 @@ Four to six search terms for the topic, method and city.
 % ======================================================================
 \section{Introduction}
 
-\subsection{Motivation}
-Why route and travel-time knowledge matters, and why Bangalore is a hard test for an LLM.
+Navigation tools such as Google Maps answer questions like ``how long will it take to drive from A to B at 6~pm?'' by combining a detailed road map with live and historical traffic data. Large language models (LLMs) are now asked the same kind of question in everyday chat, but they have no map and no traffic feed: whatever they answer comes from the text they saw during training. How much of a city's roads and traffic such a model has absorbed is not obvious, and a confident but wrong travel time is easy to believe.
 
-\subsection{Research Question}
-How close can LLMs, using only their own knowledge, get to Google Maps on routes, distances and travel times?
+Bangalore is a demanding place to test this. Its traffic changes strongly over the day, and the same road often goes by more than one name. This paper asks: \emph{how close can LLMs, using only their own knowledge, get to Google Maps on routes, distances and travel times in Bangalore?} We split this into five smaller questions. Do the models know where well-known places are and which roads exist? How close are their distances and travel times to Google's? Do they know when traffic is heavy? On which trips are they worst? And how much does the wording of the prompt change their answers?
 
-\subsection{Contributions and Paper Outline}
-What this work adds, and one sentence on how the paper is organized.
+Answering these needs a picture of the city's traffic and a fair way to ask a navigation tool and an LLM the same question. The project therefore has two parts (Fig.~\ref{fig:overview}). The first builds a traffic dataset: we turned the city's official lists of major roads into routes, queried Google's Routes API for them every two hours, and studied how travel time changes across the day and across roads. The second is the benchmark: 72 trips between named landmarks, each asked at four times on every day of a week, to Google Maps, Gemini and ChatGPT.
+
+Our contributions are:
+\begin{itemize}
+\item a pipeline from official road lists to traffic readings for each road stretch, and an analysis of this data that does not rely on Google's static duration as an empty-road time;
+\item a benchmark that gives Google and the LLMs the same trips, with whole-route and road-by-road answers;
+\item a comparison of Gemini and ChatGPT with Google Maps on places, roads, distances and travel times;
+\item a check of how prompt wording shifts an LLM's travel-time estimates.
+\end{itemize}
+
+Section~II reviews related work. Sections~III and IV describe the traffic data and its analysis, Section~V the benchmark design and Section~VI the results. Section~VII discusses the results and their limits, and Section~VIII concludes.
 
 \begin{figure}[!htb]
 \centering
-\figplaceholder{2.1cm}{Flow diagram: road lists, geocoding, traffic queries, traffic analysis, benchmark, results}
-\caption{Overview of the project, from road lists to the benchmark.}
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners=1pt, align=center, font=\scriptsize, minimum height=0.85cm, text width=1.55cm, inner sep=2pt},
+  arr/.style={-{Stealth[length=4pt]}, thin},
+  lab/.style={font=\scriptsize\itshape}]
+\node[lab, anchor=west] (t1) at (-0.95,0.75) {Traffic data};
+\node[box] (a1) at (0,0) {Official road lists};
+\node[box, right=0.35cm of a1] (a2) {Geocoding and cleaning};
+\node[box, right=0.35cm of a2] (a3) {Traffic queries every two hours};
+\node[box, right=0.35cm of a3] (a4) {Traffic analysis};
+\draw[arr] (a1) -- (a2); \draw[arr] (a2) -- (a3); \draw[arr] (a3) -- (a4);
+\node[lab, anchor=west] (t2) at (-0.95,-1.15) {Benchmark};
+\node[box] (b1) at (0,-1.9) {Landmarks and routes};
+\node[box, right=0.35cm of b1, text width=3.65cm] (b2) {Same queries to Google Maps (predicted traffic), Gemini and ChatGPT};
+\node[box, right=0.35cm of b2] (b4) {Comparison};
+\draw[arr] (b1) -- (b2);
+\draw[arr] (b2) -- (b4);
+\draw[arr, dashed] (a4.south) -- node[right, font=\scriptsize, align=left]{route tags,\\typical speeds} (b4.north);
+\end{tikzpicture}
+\caption{The two parts of the project. The traffic analysis supplies the route tags and the typical speeds used in the benchmark.}
 \label{fig:overview}
 \end{figure}
 
