@@ -167,53 +167,32 @@ The earlier analysis measured delay as the travel time minus Google's static dur
 \end{figure}
 
 \subsection{Traffic across the Day}
-Fig.~\ref{fig:traffic_by_hour}a shows the median relative travel time at each two-hour query time. Roads are fastest between 02:00 and 04:00, at about 0.75 of their usual time. Travel time rises through the morning, stays 10--18\,\% above usual from 10:00 to 16:00, and peaks at 18:00 at about 28\,\% above usual on both weekdays and weekends. There is no sharp morning peak; the morning rise flattens into a midday plateau. Weekends are mainly lighter in the morning. In speed, the median leg moves at about 29~km/h at night and 16~km/h at 18:00 on weekdays. The weekday values rest on few days, one of them a public holiday, so this profile is indicative.
+Fig.~\ref{fig:traffic_by_hour}a shows the median relative travel time at each query time. Roads are fastest between 02:00 and 04:00, at about 0.75 of their usual time. Travel time rises through the morning without a sharp peak, stays 10--18\,\% above usual from 10:00 to 16:00, and peaks at 18:00, about 28\,\% above usual.
 
 \subsection{Slow and Variable Legs}
-Half of the legs have a median speed between 18 and 25~km/h. Table~\ref{tab:legs} lists the slowest legs of at least 1~km and the legs with the largest \emph{daily swing}, the travel time at the slowest query time divided by that at the fastest. The slowest legs are all short, between 1 and 3.5~km, and move at 8 to 13~km/h. The largest swings, three to four times, include long legs in the east of the city such as Sadaramangala Road and Whitefield Road. For 21 legs (4\,\%), all shorter than about 3~km, the travel time equalled the static duration in every reading, and 19 of them never changed at all (the bar at zero in Fig.~\ref{fig:leg_variation}a). One possible reason is that Google has too little live traffic data for these roads and returns its fixed estimate, but we could not check this. The median leg has a variation of 0.22. The most variable fifth of legs, with a variation of 0.28 or more, lies mainly in the centre and along a few radial corridors (Fig.~\ref{fig:legs_map}).
+Half of the legs have a median speed between 18 and 25~km/h; the slowest, such as T.C.M. Royan Road at 8~km/h, are short stretches of 1 to 3.5~km. For 21 legs (4\,\%), all shorter than about 3~km, the travel time equalled the static duration in every reading, and 19 of them never changed at all (the bar at zero in Fig.~\ref{fig:leg_variation}a). One possible reason is that Google has too little live traffic data for these roads and returns its fixed estimate, but we could not check this.
 
-\begin{table}[!htb]
-\caption{Slowest Legs and Legs with the Largest Daily Swing (Legs of 1~km or More)}
-\label{tab:legs}
-\centering
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{L{3.3cm}ccc}
-\hline
-Leg (part of) & Length, km & Speed, km/h & Swing \\
-\hline
-\multicolumn{4}{l}{\textit{Slowest}} \\
-T.C.M. Royan Road & 1.5 & 8.2 & 2.5 \\
-Victoria Road--Lower Agaram Road & 1.2 & 10.7 & 1.4 \\
-Kanakapura Road & 1.4 & 12.4 & 2.4 \\
-K.R. Road & 3.3 & 12.7 & 1.7 \\
-\multicolumn{4}{l}{\textit{Largest daily swing}} \\
-Mysore--Old Madras Road & 1.3 & 33.5 & 4.1 \\
-Sadaramangala Road & 17.3 & 19.9 & 3.0 \\
-Whitefield Road--Varthur Road & 4.3 & 18.1 & 2.9 \\
-Basavanna Main Road--Graphite Road & 17.2 & 18.9 & 2.8 \\
-\hline
-\end{tabular}
-\end{table}
+To find the roads whose travel time changes most, we ranked all legs by their variation. The median leg has a variation of 0.22. We call the fifth of legs with the highest variation, 0.28 or more (113 legs), the \emph{variable legs}. They lie mainly in the centre and along a few radial corridors (Fig.~\ref{fig:legs_map}). The benchmark uses them to tag how much of each route runs on such roads (Section~V-C).
 
 \begin{figure}[!htb]
 \centering
-\includegraphics[width=0.9\linewidth]{figures/fig_legs_map.pdf}
-\caption{The 564 road legs used in the analysis. Red: the most variable fifth.}
+\includegraphics[width=0.9\linewidth,trim=0 0 0 43pt,clip]{figures/fig_legs_map.pdf}
+\caption{The 564 road legs used in the analysis. Red: the variable legs, the fifth with the highest variation.}
 \label{fig:legs_map}
 \end{figure}
 
 \subsection{Daily Pattern or Unpredictability?}
-During the project we asked whether the most congested roads are also the least predictable. Variation alone cannot answer this: a leg that is slow every evening and fast every night varies a lot but is easy to predict. We therefore split each leg's variation into the part explained by the query time and the part left over. For the median leg, the query time explains 87\,\% of the variation, and the left-over part is about 7\,\% of travel time. Legs with a larger daily swing also have more left-over variation (Spearman rank correlation 0.55, Fig.~\ref{fig:leg_variation}b; 9.2\,\% for the quarter of legs with the largest swing against 6.2\,\% for the rest). So the busiest legs are somewhat less predictable, but most of what looks like unpredictability is the regular daily cycle. With few readings per query time, the left-over part is only a rough estimate.
+During the project we asked whether the most congested roads are also the least predictable. Variation alone cannot answer this: a leg that is slow every evening and fast every night varies a lot but is easy to predict. We therefore split each leg's variation into the part explained by the query time and the part left over. For the median leg, the query time explains 87\,\% of the variation, and the left-over part is about 7\,\% of travel time. Legs with a larger \emph{daily swing}, the travel time at the slowest query time divided by that at the fastest, also have more left-over variation (Spearman rank correlation 0.55, Fig.~\ref{fig:leg_variation}b; 9.2\,\% for the quarter of legs with the largest swing against 6.2\,\% for the rest). So the busiest legs are somewhat less predictable, but most of what looks like unpredictability is the regular daily cycle. With few readings per query time, the left-over part is only a rough estimate.
 
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_leg_variation.pdf}
-\caption{(a) Variation of the 564 legs; red: the most variable fifth. (b) Each leg's daily swing against the variation left over after removing the daily pattern.}
+\caption{(a) Variation of the 564 legs; red: the variable legs. (b) Each leg's daily swing against the variation left over after removing the daily pattern.}
 \label{fig:leg_variation}
 \end{figure}
 
 \subsection{Animated Traffic Maps}
-Google also returns a traffic state (normal, slow or jam) for each stretch of the route line. We did not use these states to measure congestion: they are tied to positions along the route line, which shifts between queries, so the same stretch of road cannot be followed reliably over time. A leg's ends stay fixed, so a leg can be followed, which is why the leg is our sensor. We animated these states over time with the QGIS temporal controller. A first attempt merged all routes into one layer of shared road segments, identified by hashed coordinates. It failed: the files were too large, two routes on the same road could report different states for the same segment at the same time, and route lines shifted slightly between queries, so segments flickered, vanished or kept old colours. Building each route's animation separately, with every stretch at every time stored as its own line, removed these problems. Fig.~\ref{fig:animation} shows four frames for Church Road on one weekday. Google's path itself also changed: at 03:52 the route ends along a different street.
+Google also returns a traffic state (normal, slow or jam) for each stretch of the route line. We did not use these states to measure congestion: they are tied to positions along the route line, which shifts between queries, so the same stretch of road cannot be followed reliably over time. A leg's ends stay fixed, so a leg can be followed, which is why the leg is our sensor. We used them only to animate each route's traffic over time with the QGIS temporal controller (Fig.~\ref{fig:animation}).
 
 \begin{figure}[!htb]
 \centering
@@ -223,7 +202,7 @@ Google also returns a traffic state (normal, slow or jam) for each stretch of th
 \end{figure}
 
 \subsection{Link to the Benchmark}
-Two results feed the benchmark. The most variable fifth of legs is used to tag how much of each benchmark route runs on variable roads, and the typical speeds at each time of day give the simple formula used as a baseline.
+Two results feed the benchmark. The variable legs are used to tag how much of each benchmark route runs on them, and the typical speeds at each time of day give the simple formula used as a baseline.
 
 % ======================================================================
 \section{Benchmark Design}
@@ -235,7 +214,7 @@ A first pilot used 14 road segments from the traffic data as routes. Most were s
 We listed 70 well-known places across the city: metro stations, junctions, bus and railway stations, hospitals, tech parks, malls and campuses. Each name was looked up once with Google Places. A result was flagged if its name did not match, it was far from the expected area, another place with the same name existed, it was an area rather than a point, or it lay more than 150~m from a drivable road. After a manual review of the flagged places, 66 landmarks remained, and 64 of them are used in routes.
 
 \subsection{Routes and Queries}
-A \emph{route} is a trip from one landmark to another. Candidate routes were landmark pairs 0.7 to 22~km apart in a straight line. Each was given three tags from its shortest path on OpenStreetMap: a length band (1--5, 5--12 or 12--25~km), a road type from the share of its length on main roads (arterial if at least 0.6, sub-arterial if at most 0.4, otherwise mixed), and its exposure to the most variable legs of Section~IV (high or low within its length band). We chose four routes for each of the 18 combinations, giving 72 routes (Fig.~\ref{fig:routes_map}). No landmark is used more than three times. Because Google's fastest path can differ from the shortest path, the final tags are recomputed from the path Google uses most often.
+A \emph{route} is a trip from one landmark to another. Candidate routes were landmark pairs 0.7 to 22~km apart in a straight line. Each was given three tags from its shortest path on OpenStreetMap: a length band (1--5, 5--12 or 12--25~km), a road type from the share of its length on main roads (arterial if at least 0.6, sub-arterial if at most 0.4, otherwise mixed), and its \emph{exposure}, the share of its length on the variable legs of Section~IV (high or low, split at the median of its length band). We chose four routes for each of the 18 combinations, giving 72 routes (Fig.~\ref{fig:routes_map}). No landmark is used more than three times. Because Google's fastest path can differ from the shortest path, the final tags are recomputed from the path Google uses most often.
 
 A \emph{query} is one route at one time on one day: 08:00, 14:00, 18:00 or 23:00 on each of the seven days, so 28 queries per route and 2,016 in all.
 
@@ -625,7 +604,7 @@ The largest gap is at 08:00. Google predicts weekday traffic at 08:00 only 13\,\
 
 The road-by-road answers show that a good total does not mean good parts. Gemini's road distances and times always add up to its own totals, yet on roads that could be paired with Google's the typical miss is about 48\,\% for both distance and time, against 14\,\% and 23\,\% for whole routes. Errors on single roads cancel in the sum. A possible reading is that Gemini starts from a sense of the whole trip and splits it over roads, rather than adding up roads it knows; our data cannot tell these apart.
 
-Short trips are the hardest. For routes of 1--5~km the typical time miss is 33\,\%, against 21\,\% for routes of 12~km or more ($p=0.0002$), and the distance miss is 31\,\% against 11\,\%. On routes of 5~km or more, Gemini's distances are closer on main roads than on smaller ones (11\,\% against 23\,\%, $p=0.004$), but its times are not (21\,\% against 22\,\%, $p=0.60$). Routes that pass through the most variable legs of Section~IV were not harder (time miss 23\,\% against 22\,\%, $p=1.0$).
+Short trips are the hardest. For routes of 1--5~km the typical time miss is 33\,\%, against 21\,\% for routes of 12~km or more ($p=0.0002$), and the distance miss is 31\,\% against 11\,\%. On routes of 5~km or more, Gemini's distances are closer on main roads than on smaller ones (11\,\% against 23\,\%, $p=0.004$), but its times are not (21\,\% against 22\,\%, $p=0.60$). Routes with high exposure to the variable legs of Section~IV were not harder (time miss 23\,\% against 22\,\%, $p=1.0$).
 
 Prompt wording explains only part of the rush-hour bias. On the ten repeat routes, the earlier prompt, which named ``Morning Rush'' and peak-hour traffic, made Gemini call 98\,\% of weekday 08:00 queries ``heavy'', against 60\,\% with the neutral prompt, and raised the typical 08:00 time from 39 to 45~minutes. With neutral wording, rush hour is still about twice the night time. The answer format matters as much: asking for road-by-road times raised this ratio from 1.96 to 2.37 and shortened night trips. A study of LLM travel times should therefore report both the wording and the answer format.
 

@@ -33,7 +33,7 @@ for hot in (False,True):
         ax.plot(xs,ys,color=("#c0392b" if hot else "#b5b5b5"),lw=(0.9 if hot else 0.5),solid_capstyle="round")
 ax.set_aspect(1/np.cos(np.radians(12.97))); ax.set_xticks([]); ax.set_yticks([])
 for s in ax.spines.values(): s.set_visible(False)
-ax.plot([],[],color="#b5b5b5",lw=1,label="Road legs"); ax.plot([],[],color="#c0392b",lw=1.4,label="Most variable fifth")
+ax.plot([],[],color="#b5b5b5",lw=1,label="Road legs"); ax.plot([],[],color="#c0392b",lw=1.4,label="Variable legs")
 ax.legend(loc="lower left",fontsize=7)
 fig.tight_layout(pad=0.1); fig.savefig(f"{OUT}/fig_legs_map.pdf"); plt.close(fig)
 print("hot",sum(f["properties"]["is_hotspot"] for f in gj["features"]),"legs",len(gj["features"]))
