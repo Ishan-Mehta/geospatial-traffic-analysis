@@ -45,7 +45,7 @@ email address}
 \maketitle
 
 \begin{abstract}
-The question, the data, the comparison, the main results and what they mean. Write this last.
+We build a memory-efficient ETL (extract, transform, load) pipeline that turns Bangalore's official lists of major roads into traffic readings from Google's Routes API. [Rest of the abstract: the question, the comparison, the main results and what they mean. Write this last.]
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -66,11 +66,11 @@ Bangalore is a demanding place to test this. Its traffic changes strongly over t
 \item How much does the wording of the prompt change their answers?
 \end{enumerate}
 
-Answering these needs a picture of the city's traffic and a fair way to ask a navigation tool and an LLM the same question. The project therefore has two parts (Fig.~\ref{fig:overview}). The first builds a traffic dataset: we turned the city's official lists of major roads into routes, queried Google's Routes API for them every two hours, and studied how travel time changes across the day and across roads. The second is the benchmark: 72 trips between named landmarks, each asked at four times on every day of a week, to Google Maps, Gemini and ChatGPT.
+Answering these needs a picture of the city's traffic and a fair way to ask a navigation tool and an LLM the same question. The project therefore has two parts (Fig.~\ref{fig:overview}). The first is an ETL (extract, transform, load) pipeline that turns the city's official lists of major roads into traffic readings: we turned the lists into routes, queried Google's Routes API for them every two hours for a week, and studied how travel time changes across the day and across roads. The second is the benchmark: 72 trips between named landmarks, each asked at four times on every day of a week, to Google Maps, Gemini and ChatGPT.
 
 Our contributions are:
 \begin{itemize}
-\item a pipeline from official road lists to traffic readings for each road stretch, and an analysis of this data;
+\item a memory-efficient ETL pipeline from official road lists to traffic readings for each road stretch, and an analysis of this data;
 \item a benchmark that gives Google and the LLMs the same trips, with whole-route and road-by-road answers;
 \item a comparison of Gemini and ChatGPT with Google Maps on places, roads, distances and travel times;
 \item a check of how prompt wording shifts an LLM's travel-time estimates.
@@ -130,7 +130,7 @@ Each road was written as a chain of places: the origin, the places in between, a
 \subsection{Removing Redundant Routes}
 Most roads were lost at the geocoding step: 87 were left with fewer than two located points and could not form a route, which left 278 (74 arterial, 204 sub-arterial). Two further rules removed overlaps. Coordinates were first rounded to four decimal places, about 11~m. If two routes started and ended at the same rounded points, we kept the one with more points in between. If a route's chain appeared as an unbroken part of a longer chain, we dropped it. These rules removed five routes, which left 273 routes (74 arterial, 199 sub-arterial) for the traffic queries.
 
-Fig.~\ref{fig:route_geometries} shows the routes on a map. For viewing only, each pair of neighbouring points was joined by the shortest path on the OpenStreetMap road network, loaded with OSMnx and treated as two-way. These lines are not used for any measurement.
+Fig.~\ref{fig:route_geometries} shows the routes on a map. For viewing only, each pair of neighbouring points was joined by the shortest path (Dijkstra's algorithm in NetworkX) on the OpenStreetMap road network, loaded with OSMnx and treated as two-way. These lines are not used for any measurement.
 
 \begin{figure}[!htb]
 \centering
@@ -141,10 +141,10 @@ Fig.~\ref{fig:route_geometries} shows the routes on a map. For viewing only, eac
 \end{figure}
 
 \subsection{Traffic Queries}
-We sent all 273 routes to the Google Routes API every two hours. Each request gave the route's origin, destination and in-between points, in driving mode with traffic-aware routing (\texttt{TRAFFIC\_AWARE}). The in-between points were marked as stops, so Google returned each stretch between two stops as a separate \emph{leg} with its own travel time. Without stops, a whole route comes back as one leg, and a slow stretch cannot be located. No departure time was set, so every answer is Google's estimate for the moment of the request. For each leg we stored the travel time with traffic, a second time that Google calls the \emph{static duration} (Section~\ref{sec:static}), the distance, the route line and the traffic state (normal, slow or jam) along the line, which Google calls speed reading intervals.
+We sent all 273 routes to the Google Routes API every two hours. The collection ran for seven days, giving 84 snapshots of all 273 routes; the analysis in Section~IV uses the 44 snapshots taken between 1 and 5 April 2026. Each request gave the route's origin, destination and in-between points, in driving mode with traffic-aware routing (\texttt{TRAFFIC\_AWARE}). The in-between points were marked as stops, so Google returned each stretch between two stops as a separate \emph{leg} with its own travel time. Without stops, a whole route comes back as one leg, and a slow stretch cannot be located. No departure time was set, so every answer is Google's estimate for the moment of the request. For each leg we stored the travel time with traffic, a second time that Google calls the \emph{static duration} (Section~\ref{sec:static}), the distance, the route line and the traffic state (normal, slow or jam) along the line, which Google calls speed reading intervals.
 
 \subsection{From Raw Responses to Tables}
-The raw responses are large nested JSON files, so we read them one file at a time and flattened them into two tables. Each leg was identified by its start and end points, rounded to four decimal places and hashed with MD5. This gave a stable ID even when Google returned slightly different coordinates. The first table lists every leg once, with its position and length. The second has one row per leg per query, with the time, the travel time with traffic and the static duration. In all, the data contains 689 distinct legs.
+The raw responses are gigabytes of nested JSON, so the pipeline streams them one file at a time with Python generators instead of loading them all into memory, and flattens them into two tables. Each leg was identified by \emph{spatial hashing}: its start and end points were rounded to four decimal places (about 11~m) and hashed with MD5. This gave a stable ID even when Google returned slightly different coordinates. The first table, a master index, lists every leg once with its position and length. The second, a time-series table, has one row per leg per query, with the time, the travel time with traffic and the static duration. In all, the data contains 689 distinct legs.
 
 Google reports the travel time with traffic for a whole leg, not for the turns inside it. Splitting a leg's time across its parts by distance would assume the same traffic everywhere on the leg, so the leg is our smallest unit. We treat each leg as a fixed sensor that is read every two hours.
 
@@ -157,7 +157,7 @@ Some legs could not be trusted. We removed 32 legs that lie outside Bangalore, 8
 Speed is a leg's length divided by its travel time with traffic. To compare legs of different length, we divide each reading by the median travel time of the same leg and call this the \emph{relative travel time}: 1.2 means 20\,\% slower than usual for that leg. A leg's \emph{variation} is the standard deviation of its travel time divided by its mean (its coefficient of variation).
 
 \subsection{What Google's Static Duration Means}\label{sec:static}
-The earlier analysis measured delay as the travel time minus Google's static duration, as if the static duration were the time on an empty road. The data does not support this. Of all readings, 63\,\% are faster than the static duration, and between 02:00 and 04:00 the median reading takes only 0.70 times the static duration (Fig.~\ref{fig:traffic_by_hour}b). An empty-road time could not be beaten this often. Google's API reference describes the field as the time without traffic, while its page on routing options describes it as an estimate from historical traffic only. Our data fits the second description. We therefore do not use delay or congestion ratios built on this field, and use the relative travel time instead.
+The earlier analysis measured delay as the travel time minus Google's static duration, as if the static duration were the time on an empty road. The data does not support this. Of all readings, 63\,\% are faster than the static duration, and between 02:00 and 04:00 the median reading takes only 0.70 times the static duration (Fig.~\ref{fig:traffic_by_hour}b). For 91\,\% of legs, the median reading is faster than the static duration. An empty-road time could not be beaten this often. The static duration is also almost fixed for each leg: for the median leg it does not change between queries, and it shows no pattern across the day. Google's API reference describes the field as the time without traffic, while its page on routing options describes it as an estimate from historical traffic only. Our data fits the second description. We therefore do not use delay or congestion ratios built on this field, and use the relative travel time instead.
 
 \begin{figure}[!htb]
 \centering
@@ -170,7 +170,7 @@ The earlier analysis measured delay as the travel time minus Google's static dur
 Fig.~\ref{fig:traffic_by_hour}a shows the median relative travel time at each two-hour query time. Roads are fastest between 02:00 and 04:00, at about 0.75 of their usual time. Travel time rises through the morning, stays 10--18\,\% above usual from 10:00 to 16:00, and peaks at 18:00 at about 28\,\% above usual on both weekdays and weekends. There is no sharp morning peak; the morning rise flattens into a midday plateau. Weekends are mainly lighter in the morning. In speed, the median leg moves at about 29~km/h at night and 16~km/h at 18:00 on weekdays. The weekday values rest on few days, one of them a public holiday, so this profile is indicative.
 
 \subsection{Slow and Variable Legs}
-Half of the legs have a median speed between 18 and 25~km/h. Table~\ref{tab:legs} lists the slowest legs of at least 1~km and the legs with the largest \emph{daily swing}, the travel time at the slowest query time divided by that at the fastest. The slowest legs are all short, between 1 and 3.5~km, and move at 8 to 13~km/h. The largest swings, three to four times, include long legs in the east of the city such as Sadaramangala Road and Whitefield Road. Nineteen legs, mostly short side roads, reported exactly the same travel time in every query. One possible reason is that Google has too little traffic data for them and returns a fixed estimate, but we could not check this. The most variable fifth of legs, with a variation of 0.28 or more, lies mainly in the centre and along a few radial corridors (Fig.~\ref{fig:legs_map}).
+Half of the legs have a median speed between 18 and 25~km/h. Table~\ref{tab:legs} lists the slowest legs of at least 1~km and the legs with the largest \emph{daily swing}, the travel time at the slowest query time divided by that at the fastest. The slowest legs are all short, between 1 and 3.5~km, and move at 8 to 13~km/h. The largest swings, three to four times, include long legs in the east of the city such as Sadaramangala Road and Whitefield Road. For 21 legs (4\,\%), all shorter than about 3~km, the travel time equalled the static duration in every reading, and 19 of them never changed at all (the bar at zero in Fig.~\ref{fig:leg_variation}a). One possible reason is that Google has too little live traffic data for these roads and returns its fixed estimate, but we could not check this. The median leg has a variation of 0.22. The most variable fifth of legs, with a variation of 0.28 or more, lies mainly in the centre and along a few radial corridors (Fig.~\ref{fig:legs_map}).
 
 \begin{table}[!htb]
 \caption{Slowest Legs and Legs with the Largest Daily Swing (Legs of 1~km or More)}
@@ -203,14 +203,21 @@ Basavanna Main Road--Graphite Road & 17.2 & 18.9 & 2.8 \\
 \end{figure}
 
 \subsection{Daily Pattern or Unpredictability?}
-During the project we asked whether the most congested roads are also the least predictable. Variation alone cannot answer this: a leg that is slow every evening and fast every night varies a lot but is easy to predict. We therefore split each leg's variation into the part explained by the query time and the part left over. For the median leg, the query time explains 87\,\% of the variation, and the left-over part is about 7\,\% of travel time. Legs with a larger daily swing also have more left-over variation (Spearman rank correlation 0.55; 9.2\,\% for the quarter of legs with the largest swing against 6.2\,\% for the rest). So the busiest legs are somewhat less predictable, but most of what looks like unpredictability is the regular daily cycle. With few readings per query time, the left-over part is only a rough estimate.
-
-\subsection{Animated Traffic Maps}
-Google also returns a traffic state (normal, slow or jam) for each stretch of the route line. We animated these states over time with the QGIS temporal controller. A first attempt merged all routes into one layer of shared road segments, identified by hashed coordinates. It failed: the files were too large, two routes on the same road could report different states for the same segment at the same time, and route lines shifted slightly between queries, so segments flickered, vanished or kept old colours. Building each route's animation separately, with every stretch at every time stored as its own line, removed these problems. Fig.~\ref{fig:animation} shows four frames for Church Road on one weekday. Google's path itself also changed: at 03:52 the route ends along a different street.
+During the project we asked whether the most congested roads are also the least predictable. Variation alone cannot answer this: a leg that is slow every evening and fast every night varies a lot but is easy to predict. We therefore split each leg's variation into the part explained by the query time and the part left over. For the median leg, the query time explains 87\,\% of the variation, and the left-over part is about 7\,\% of travel time. Legs with a larger daily swing also have more left-over variation (Spearman rank correlation 0.55, Fig.~\ref{fig:leg_variation}b; 9.2\,\% for the quarter of legs with the largest swing against 6.2\,\% for the rest). So the busiest legs are somewhat less predictable, but most of what looks like unpredictability is the regular daily cycle. With few readings per query time, the left-over part is only a rough estimate.
 
 \begin{figure}[!htb]
 \centering
-\includegraphics[width=\linewidth]{figures/fig_animation_frames.pdf}
+\includegraphics[width=\linewidth]{figures/fig_leg_variation.pdf}
+\caption{(a) Variation of the 564 legs; red: the most variable fifth. (b) Each leg's daily swing against the variation left over after removing the daily pattern.}
+\label{fig:leg_variation}
+\end{figure}
+
+\subsection{Animated Traffic Maps}
+Google also returns a traffic state (normal, slow or jam) for each stretch of the route line. We did not use these states to measure congestion: they are tied to positions along the route line, which shifts between queries, so the same stretch of road cannot be followed reliably over time. A leg's ends stay fixed, so a leg can be followed, which is why the leg is our sensor. We animated these states over time with the QGIS temporal controller. A first attempt merged all routes into one layer of shared road segments, identified by hashed coordinates. It failed: the files were too large, two routes on the same road could report different states for the same segment at the same time, and route lines shifted slightly between queries, so segments flickered, vanished or kept old colours. Building each route's animation separately, with every stretch at every time stored as its own line, removed these problems. Fig.~\ref{fig:animation} shows four frames for Church Road on one weekday. Google's path itself also changed: at 03:52 the route ends along a different street.
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=0.8\linewidth]{figures/fig_animation_frames.pdf}
 \caption{Traffic state along Church Road at four times on one weekday.}
 \label{fig:animation}
 \end{figure}
@@ -222,7 +229,7 @@ Two results feed the benchmark. The most variable fifth of legs is used to tag h
 \section{Benchmark Design}
 
 \subsection{Lessons from a Small Pilot}
-A first small trial used 14 road segments from the traffic data as routes. Ten were shorter than 1.5~km, their names came from turning coordinates back into addresses (giving names such as ``Start of X''), two came from geocoding mistakes, and only one of 22 LLM answers was saved. We rebuilt the benchmark around named landmarks, longer routes and a record of every answer.
+A first pilot used 14 road segments from the traffic data as routes. Most were shorter than 1.5~km and were named by turning coordinates back into addresses (``Start of X''), which an LLM cannot recognise, and few answers were saved. We therefore moved to trips between well-known landmarks, which an LLM can know by name, with longer routes and a record of every answer.
 
 \subsection{Landmarks}
 We listed 70 well-known places across the city: metro stations, junctions, bus and railway stations, hospitals, tech parks, malls and campuses. Each name was looked up once with Google Places. A result was flagged if its name did not match, it was far from the expected area, another place with the same name existed, it was an area rather than a point, or it lay more than 150~m from a drivable road. After a manual review of the flagged places, 66 landmarks remained, and 64 of them are used in routes.
@@ -234,7 +241,7 @@ A \emph{query} is one route at one time on one day: 08:00, 14:00, 18:00 or 23:00
 
 \begin{figure}[!htb]
 \centering
-\includegraphics[width=0.9\linewidth]{figures/fig_routes_map.pdf}
+\includegraphics[width=0.9\linewidth,trim=0 0 0 43pt,clip]{figures/fig_routes_map.pdf}
 \caption{The 72 benchmark routes as planned (shortest paths on OpenStreetMap), by length band, over the road legs of Section~IV.}
 \label{fig:routes_map}
 \end{figure}
@@ -269,10 +276,10 @@ Repeat answers & -- & 10 routes, 2 extra & 10 routes, 2 extra \\
 \end{table}
 
 \subsection{Prompt and Answer Format}
-Both LLMs receive the same instruction and question (Table~\ref{tab:prompt}). The API forces the answer into a fixed format, given as a JSON schema (structured output; Table~\ref{tab:answer_format}), so no free text has to be parsed. The road list gives a distance and time for each road, which allows a road-by-road comparison with Google.
+Both LLMs receive the same instruction and question (Table~\ref{tab:prompt}). The API forces the answer into a fixed format, given as a JSON schema (structured output), so no free text has to be parsed. The road list gives a distance and time for each road, which allows a road-by-road comparison with Google.
 
 \begin{table}[!htb]
-\caption{Neutral Prompt Given to Both LLMs}
+\caption{Neutral Prompt and Answer Format for Both LLMs}
 \label{tab:prompt}
 \centering
 \footnotesize
@@ -293,22 +300,8 @@ Both LLMs receive the same instruction and question (Table~\ref{tab:prompt}). Th
 \texttt{Day of the week: Tuesday} \\
 \texttt{Time of day: 08:00} \\
 \hline
-\end{tabular}
-\end{table}
-
-\begin{table}[!htb]
-\caption{Answer Format Required from Both LLMs}
-\label{tab:answer_format}
-\centering
-\begin{tabular}{L{2.2cm}L{1.3cm}L{3.6cm}}
-\hline
-Field & Type & Description \\
-\hline
-Suggested route & List & Roads in driving order, each with its name, distance (km) and time (min) \\
-Estimated distance & Number & Total driving distance in km \\
-Estimated time & Number & Total driving time in minutes at that day and time \\
-Traffic level & One of four & None, light, moderate or heavy \\
-Reasoning & Text & Short explanation of route and time \\
+\textit{Answer fields} \\
+Suggested route (each road with name, distance in km and time in min); estimated distance (km); estimated time (min); traffic level (none, light, moderate or heavy); reasoning \\
 \hline
 \end{tabular}
 \end{table}
