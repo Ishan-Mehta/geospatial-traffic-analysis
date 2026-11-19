@@ -214,7 +214,7 @@ A first pilot used 14 road segments from the traffic data as routes. Most were s
 We listed 70 well-known places across the city: metro stations, junctions, bus and railway stations, hospitals, tech parks, malls and campuses. Each name was looked up once with Google Places. A result was flagged if its name did not match, it was far from the expected area, another place with the same name existed, it was an area rather than a point, or it lay more than 150~m from a drivable road. After a manual review of the flagged places, 66 landmarks remained, and 64 of them are used in routes.
 
 \subsection{Routes and Queries}
-A \emph{route} is a trip from one landmark to another. Candidate routes were landmark pairs 0.7 to 22~km apart in a straight line. Each was given three tags from its shortest path on OpenStreetMap: a length band (1--5, 5--12 or 12--25~km), a road type from the share of its length on main roads (arterial if at least 0.6, sub-arterial if at most 0.4, otherwise mixed), and its \emph{exposure}, the share of its length on the variable legs of Section~IV (high or low, split at the median of its length band). We chose four routes for each of the 18 combinations, giving 72 routes (Fig.~\ref{fig:routes_map}). No landmark is used more than three times. Because Google's fastest path can differ from the shortest path, the final tags are recomputed from the path Google uses most often.
+A \emph{route} is a trip from one landmark to another. Candidate routes were landmark pairs 0.7 to 22~km apart in a straight line. Each was given three tags from its shortest path on OpenStreetMap: a length band (1--5, 5--12 or 12--25~km), a road type from the share of its length on main roads (arterial if at least 0.6, sub-arterial if at most 0.4, otherwise mixed), and its \emph{exposure}, the share of its length on the variable legs of Section~IV (high or low, split at the median of its length band). We chose four routes for each of the 18 combinations, giving 72 routes (Fig.~\ref{fig:routes_map}). No landmark is used more than three times.
 
 A \emph{query} is one route at one time on one day: 08:00, 14:00, 18:00 or 23:00 on each of the seven days, so 28 queries per route and 2,016 in all.
 
@@ -226,7 +226,7 @@ A \emph{query} is one route at one time on one day: 08:00, 14:00, 18:00 or 23:00
 \end{figure}
 
 \subsection{Google Maps Reference}
-Google Maps receives each landmark's coordinates. For every query we asked the Routes API for the route at that day and time in the week of Saturday 28 November to Friday 4 December 2026, with the most thorough traffic-aware routing mode (\texttt{TRAFFIC\_AWARE\_OPTIMAL}) and Google's default \emph{best guess} traffic model. Because the departure times lie in the future, the answers are Google's \emph{predicted} travel times, not measured ones. Google's first suggested route is the reference; up to two alternatives were stored. We checked that Google's start and end points lie close to our landmark coordinates.
+Google Maps receives each landmark's coordinates. For every query we asked the Routes API for the route at that day and time in the week of Saturday 28 November to Friday 4 December 2026, with the most thorough traffic-aware routing mode (\texttt{TRAFFIC\_AWARE\_OPTIMAL}) and Google's default \emph{best guess} traffic model. Because the departure times lie in the future, the answers are Google's \emph{predicted} travel times, not measured ones. Google's first suggested route is the reference. We checked that Google's start and end points lie close to our landmark coordinates.
 
 Google gives the time with traffic only for a whole leg. To get road-by-road times, we sent a second request for each query with a stop at every point where the road changes along that query's own route. Stretches shorter than 300~m were merged with a neighbour, and a route has at most 11 parts. Every query was checked that its parts add up to the whole route.
 
@@ -345,8 +345,8 @@ Predicted traffic by day and time, how often Google changes path, and fastest ve
 
 \begin{figure}[!htb]
 \centering
-\figplaceholder{2.4cm}{Heatmap: day of the week against time of day, showing Google's traffic index}
-\caption{Google's predicted traffic by day and time.}
+\includegraphics[width=\linewidth]{figures/fig_google_heatmap.pdf}
+\caption{Google's predicted traffic for the benchmark week: median traffic index of the 72 routes, shown as the percentage above each route's fastest time.}
 \label{fig:google_heatmap}
 \end{figure}
 
@@ -393,8 +393,8 @@ Same road list on repeat & & \\
 
 \begin{figure}[!htb]
 \centering
-\figplaceholder{2.4cm}{Map or histogram: distance between each LLM's point and Google's point for every landmark}
-\caption{How far each LLM places landmarks from Google's points.}
+\includegraphics[width=\linewidth]{figures/fig_landmark_error.pdf}
+\caption{Distance between Gemini's point and Google's point for each of the 64 landmarks. The dashed line marks the 2~km limit of the landmark check.}
 \label{fig:landmark_error}
 \end{figure}
 
@@ -418,12 +418,12 @@ Simple formula & & & & \\
 \end{tabular}
 \end{table}
 
-\begin{figure*}[!t]
+\begin{figure}[!htb]
 \centering
-\figplaceholder{2.9cm}{Four scatter plots with log axes: LLM against Google for distance (left) and time (right), one row per LLM}
-\caption{Gemini and ChatGPT against Google Maps for every query.}
+\includegraphics[width=\linewidth]{figures/fig_scatter.pdf}
+\caption{Gemini against Google Maps for all 2,016 queries, on log axes: (a) distance, (b) travel time by query time. The dotted line marks equal values.}
 \label{fig:scatter}
-\end{figure*}
+\end{figure}
 
 \begin{table}[!htb]
 \caption{Worked Example: One Route at Two Times}
@@ -468,22 +468,22 @@ Simple formula & & & & \\
 
 \begin{figure}[!htb]
 \centering
-\figplaceholder{2.4cm}{Line charts across the day for Google, Gemini and ChatGPT: weekdays (left) and weekends (right), each time relative to the same route at weekday night}
-\caption{Shape of the day for each source.}
+\includegraphics[width=\linewidth]{figures/fig_day_shape.pdf}
+\caption{Shape of the day: median travel time at each query time divided by the same route at weekday 23:00, for Google and Gemini.}
 \label{fig:day_shape}
 \end{figure}
 
 \begin{figure}[!htb]
 \centering
-\figplaceholder{2.6cm}{Scatter plot, one dot per route: rush-hour multiplier of each LLM against Google's, marked by route length}
-\caption{Rush-hour multiplier for each route.}
+\includegraphics[width=\linewidth]{figures/fig_multiplier.pdf}
+\caption{Rush-hour multiplier of each route: Gemini against Google, by route length. Every route lies above the dotted line of equal values.}
 \label{fig:multiplier}
 \end{figure}
 
 \begin{figure}[!htb]
 \centering
-\figplaceholder{2.3cm}{Stacked bars: share of each traffic level reported by each LLM at each time, with Google's traffic index above}
-\caption{Traffic levels reported by the LLMs at each time of day.}
+\includegraphics[width=\linewidth]{figures/fig_traffic_levels.pdf}
+\caption{Traffic levels reported by Gemini at each weekday query time, with Google's median traffic index above each bar.}
 \label{fig:traffic_levels}
 \end{figure}
 
@@ -521,8 +521,8 @@ Errors by route length, road type and exposure to variable roads, with length co
 
 \begin{figure}[!htb]
 \centering
-\figplaceholder{2.4cm}{Bars for Gemini and ChatGPT: typical error by route length (left) and by road type on longer routes (right)}
-\caption{Typical error by route length and road type.}
+\includegraphics[width=\linewidth]{figures/fig_where_worst.pdf}
+\caption{Gemini's typical miss (median percentage error per route) by route length (a), and on main and smaller roads for routes of 5~km or more (b).}
 \label{fig:where_worst}
 \end{figure}
 
@@ -585,8 +585,8 @@ Share labelled heavy & & & \\
 
 \begin{figure}[!htb]
 \centering
-\figplaceholder{2.4cm}{Line chart across the day: Gemini with each prompt, and Google}
-\caption{Gemini's travel times under the two prompts, with Google.}
+\includegraphics[width=\linewidth]{figures/fig_prompt_effect.pdf}
+\caption{Typical weekday travel time on the ten repeat routes for three prompt versions of Gemini, with Google.}
 \label{fig:prompt_effect}
 \end{figure}
 
