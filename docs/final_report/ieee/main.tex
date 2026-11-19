@@ -57,13 +57,20 @@ Four to six search terms for the topic, method and city.
 
 Navigation tools such as Google Maps answer questions like ``how long will it take to drive from A to B at 6~pm?'' by combining a detailed road map with live and historical traffic data. Large language models (LLMs) are now asked the same kind of question in everyday chat, but they have no map and no traffic feed: whatever they answer comes from the text they saw during training. How much of a city's roads and traffic such a model has absorbed is not obvious, and a confident but wrong travel time is easy to believe.
 
-Bangalore is a demanding place to test this. Its traffic changes strongly over the day, and the same road often goes by more than one name. This paper asks: \emph{how close can LLMs, using only their own knowledge, get to Google Maps on routes, distances and travel times in Bangalore?} We split this into five smaller questions. Do the models know where well-known places are and which roads exist? How close are their distances and travel times to Google's? Do they know when traffic is heavy? On which trips are they worst? And how much does the wording of the prompt change their answers?
+Bangalore is a demanding place to test this. Its traffic changes strongly over the day, and the same road often goes by more than one name. This paper asks: \emph{how close can LLMs, using only their own knowledge, get to Google Maps on routes, distances and travel times in Bangalore?} We split this into five smaller questions:
+\begin{enumerate}
+\item Do the models know where well-known places are and which roads exist?
+\item How close are their distances and travel times to Google's?
+\item Do they know when traffic is heavy?
+\item On which trips are they worst?
+\item How much does the wording of the prompt change their answers?
+\end{enumerate}
 
 Answering these needs a picture of the city's traffic and a fair way to ask a navigation tool and an LLM the same question. The project therefore has two parts (Fig.~\ref{fig:overview}). The first builds a traffic dataset: we turned the city's official lists of major roads into routes, queried Google's Routes API for them every two hours, and studied how travel time changes across the day and across roads. The second is the benchmark: 72 trips between named landmarks, each asked at four times on every day of a week, to Google Maps, Gemini and ChatGPT.
 
 Our contributions are:
 \begin{itemize}
-\item a pipeline from official road lists to traffic readings for each road stretch, and an analysis of this data that does not rely on Google's static duration as an empty-road time;
+\item a pipeline from official road lists to traffic readings for each road stretch, and an analysis of this data;
 \item a benchmark that gives Google and the LLMs the same trips, with whole-route and road-by-road answers;
 \item a comparison of Gemini and ChatGPT with Google Maps on places, roads, distances and travel times;
 \item a check of how prompt wording shifts an LLM's travel-time estimates.
@@ -121,39 +128,23 @@ The Bruhat Bengaluru Mahanagara Palike (BBMP), the city's municipal body, publis
 Each road was written as a chain of places: the origin, the places in between, and the destination. Some entries cannot be placed on a map, such as ``Ring Road'', ``BBMP Limit'' or ``Start''. We removed these with a short blocklist. We also removed any name containing ``Road'' unless it also had a landmark word such as ``Cross'', ``Circle'', ``Gate'' or ``Temple'', because a road name alone does not mark a point. The remaining names were converted to latitude and longitude with the Google Geocoding API, with ``Bangalore, India'' added to each name.
 
 \subsection{Removing Redundant Routes}
-Table~\ref{tab:route_counts} shows how the list shrank. Most of the loss came from incomplete chains: 87 roads were left with fewer than two located points and could not form a route. Two further rules removed overlaps. Coordinates were first rounded to four decimal places, about 11~m. If two routes started and ended at the same rounded points, we kept the one with more points in between. If a route's chain appeared as an unbroken part of a longer chain, we dropped it. These two rules removed only five routes, which left 273 routes for the traffic queries.
+Most roads were lost at the geocoding step: 87 were left with fewer than two located points and could not form a route, which left 278 (74 arterial, 204 sub-arterial). Two further rules removed overlaps. Coordinates were first rounded to four decimal places, about 11~m. If two routes started and ended at the same rounded points, we kept the one with more points in between. If a route's chain appeared as an unbroken part of a longer chain, we dropped it. These rules removed five routes, which left 273 routes (74 arterial, 199 sub-arterial) for the traffic queries.
 
-\begin{table}[!htb]
-\caption{Road List at Each Cleaning Step}
-\label{tab:route_counts}
-\centering
-\begin{tabular}{L{3.5cm}ccc}
-\hline
-Step & Arterial & Sub-arterial & Total \\
-\hline
-Official road list & 80 & 285 & 365 \\
-After geocoding and filtering & 74 & 204 & 278 \\
-After removing shared endpoints & 74 & 200 & 274 \\
-After removing routes inside longer routes & 74 & 199 & 273 \\
-\hline
-\end{tabular}
-\end{table}
-
-\subsection{Route Geometries}
-To check the routes on a map, we joined each pair of neighbouring points by the shortest path on the OpenStreetMap road network of Bangalore, loaded with OSMnx. Here the network was treated as two-way, because one-way streets left some pairs with no path. These lines were used only for viewing in QGIS (Fig.~\ref{fig:route_geometries}) and not for any measurement.
+Fig.~\ref{fig:route_geometries} shows the routes on a map. For viewing only, each pair of neighbouring points was joined by the shortest path on the OpenStreetMap road network, loaded with OSMnx and treated as two-way. These lines are not used for any measurement.
 
 \begin{figure}[!htb]
 \centering
-\figplaceholder{2.6cm}{Two maps side by side: arterial routes and sub-arterial routes}
-\caption{Arterial (left) and sub-arterial (right) routes drawn in QGIS.}
+\includegraphics[height=3.4cm]{figures/fig_routes_arterial.jpg}\hfill
+\includegraphics[height=3.4cm]{figures/fig_routes_subarterial.jpg}
+\caption{Arterial (left) and sub-arterial (right) routes drawn in QGIS, before overlapping routes were removed. Base map \copyright{} OpenStreetMap contributors.}
 \label{fig:route_geometries}
 \end{figure}
 
 \subsection{Traffic Queries}
-We sent all 273 routes to the Google Routes API every two hours. Each request gave the route's origin, destination and in-between points, in driving mode with traffic-aware routing. The in-between points were marked as stops, so Google returned each stretch between two stops as a separate \emph{leg} with its own travel time. Without stops, a whole route comes back as one leg, and a slow stretch cannot be located. No departure time was set, so every answer is Google's estimate for the moment of the request. For each leg we stored the travel time with traffic, a second time that Google calls the static duration (Section~\ref{sec:static}), the distance, the route line and the traffic state (normal, slow or jam) along the line.
+We sent all 273 routes to the Google Routes API every two hours. Each request gave the route's origin, destination and in-between points, in driving mode with traffic-aware routing (\texttt{TRAFFIC\_AWARE}). The in-between points were marked as stops, so Google returned each stretch between two stops as a separate \emph{leg} with its own travel time. Without stops, a whole route comes back as one leg, and a slow stretch cannot be located. No departure time was set, so every answer is Google's estimate for the moment of the request. For each leg we stored the travel time with traffic, a second time that Google calls the \emph{static duration} (Section~\ref{sec:static}), the distance, the route line and the traffic state (normal, slow or jam) along the line, which Google calls speed reading intervals.
 
 \subsection{From Raw Responses to Tables}
-The raw responses are large nested JSON files, so we read them one file at a time and flattened them into two tables. Each leg was identified by its start and end points, rounded to four decimal places and hashed. This gave a stable ID even when Google returned slightly different coordinates. The first table lists every leg once, with its position and length. The second has one row per leg per query, with the time, the travel time with traffic and the static duration. In all, the data contains 689 distinct legs.
+The raw responses are large nested JSON files, so we read them one file at a time and flattened them into two tables. Each leg was identified by its start and end points, rounded to four decimal places and hashed with MD5. This gave a stable ID even when Google returned slightly different coordinates. The first table lists every leg once, with its position and length. The second has one row per leg per query, with the time, the travel time with traffic and the static duration. In all, the data contains 689 distinct legs.
 
 Google reports the travel time with traffic for a whole leg, not for the turns inside it. Splitting a leg's time across its parts by distance would assume the same traffic everywhere on the leg, so the leg is our smallest unit. We treat each leg as a fixed sensor that is read every two hours.
 
@@ -163,7 +154,7 @@ Google reports the travel time with traffic for a whole leg, not for the turns i
 \subsection{Cleaning and Measures}
 Some legs could not be trusted. We removed 32 legs that lie outside Bangalore, 86 whose road distance is more than twice the straight-line distance between their ends, and 7 that were missing from many queries. The first two groups come from geocoding errors; some removed legs are more than 150~km long. This left 564 of the 689 legs.
 
-Speed is a leg's length divided by its travel time with traffic. To compare legs of different length, we divide each reading by the median travel time of the same leg and call this the \emph{relative travel time}: 1.2 means 20\,\% slower than usual for that leg. A leg's \emph{variation} is the standard deviation of its travel time divided by its mean.
+Speed is a leg's length divided by its travel time with traffic. To compare legs of different length, we divide each reading by the median travel time of the same leg and call this the \emph{relative travel time}: 1.2 means 20\,\% slower than usual for that leg. A leg's \emph{variation} is the standard deviation of its travel time divided by its mean (its coefficient of variation).
 
 \subsection{What Google's Static Duration Means}\label{sec:static}
 The earlier analysis measured delay as the travel time minus Google's static duration, as if the static duration were the time on an empty road. The data does not support this. Of all readings, 63\,\% are faster than the static duration, and between 02:00 and 04:00 the median reading takes only 0.70 times the static duration (Fig.~\ref{fig:traffic_by_hour}b). An empty-road time could not be beaten this often. Google's API reference describes the field as the time without traffic, while its page on routing options describes it as an estimate from historical traffic only. Our data fits the second description. We therefore do not use delay or congestion ratios built on this field, and use the relative travel time instead.
@@ -249,7 +240,7 @@ A \emph{query} is one route at one time on one day: 08:00, 14:00, 18:00 or 23:00
 \end{figure}
 
 \subsection{Google Maps Reference}
-Google Maps receives each landmark's coordinates. For every query we asked the Routes API for the route at that day and time in the week of Saturday 28 November to Friday 4 December 2026, with the most thorough traffic-aware routing mode. Because the departure times lie in the future, the answers are Google's \emph{predicted} travel times, not measured ones. Google's first suggested route is the reference; up to two alternatives were stored. We checked that Google's start and end points lie close to our landmark coordinates.
+Google Maps receives each landmark's coordinates. For every query we asked the Routes API for the route at that day and time in the week of Saturday 28 November to Friday 4 December 2026, with the most thorough traffic-aware routing mode (\texttt{TRAFFIC\_AWARE\_OPTIMAL}) and Google's default \emph{best guess} traffic model. Because the departure times lie in the future, the answers are Google's \emph{predicted} travel times, not measured ones. Google's first suggested route is the reference; up to two alternatives were stored. We checked that Google's start and end points lie close to our landmark coordinates.
 
 Google gives the time with traffic only for a whole leg. To get road-by-road times, we sent a second request for each query with a stop at every point where the road changes along that query's own route. Stretches shorter than 300~m were merged with a neighbour, and a route has at most 11 parts. Every query was checked that its parts add up to the whole route.
 
@@ -278,7 +269,7 @@ Repeat answers & -- & 10 routes, 2 extra & 10 routes, 2 extra \\
 \end{table}
 
 \subsection{Prompt and Answer Format}
-Both LLMs receive the same instruction and question (Table~\ref{tab:prompt}). The API forces the answer into a fixed format (Table~\ref{tab:answer_format}), so no free text has to be parsed. The road list gives a distance and time for each road, which allows a road-by-road comparison with Google.
+Both LLMs receive the same instruction and question (Table~\ref{tab:prompt}). The API forces the answer into a fixed format, given as a JSON schema (structured output; Table~\ref{tab:answer_format}), so no free text has to be parsed. The road list gives a distance and time for each road, which allows a road-by-road comparison with Google.
 
 \begin{table}[!htb]
 \caption{Neutral Prompt Given to Both LLMs}
@@ -343,12 +334,12 @@ Time field & \ldots{} including expected traffic & \ldots{} at the given day and
 \end{table}
 
 \subsection{Landmark Check and Road Names}
-To separate ``does not know the place'' from ``routes badly'', each LLM was also asked, in a separate request, where each landmark is (locality and coordinates). A landmark counts as misplaced if the LLM's point is more than 2~km from Google's and the locality does not match.
+To separate ``does not know the place'' from ``routes badly'', each LLM was also asked, in a separate request, where each landmark is (locality and coordinates). A landmark counts as \emph{misplaced} if the LLM's point is more than 2~km from Google's and the locality does not match.
 
-To compare roads, Google's route line was laid onto OpenStreetMap: a point every 20~m was matched to the nearest road within 25~m, and a road name was kept if it held for at least three points. Road names from Google's turn-by-turn instructions were added. LLM road names were cleaned (case, abbreviations such as ``Rd'' and ``ORR'') and counted as the same road as a reference name when their similarity score was at least 85 out of 100. The reference list joins OpenStreetMap names, Google's instruction names and the BBMP road list.
+To compare roads, Google's route line was \emph{map-matched} to OpenStreetMap: a point every 20~m was matched to the nearest road within 25~m, and a road name was kept if it held for at least three points. Road names from Google's turn-by-turn instructions were added. LLM road names were cleaned (case, abbreviations such as ``Rd'' and ``ORR'') and counted as the same road as a reference name when their token-set similarity score, a fuzzy string match that ignores word order, was at least 85 out of 100. The \emph{reference list} joins OpenStreetMap names, Google's instruction names and the BBMP road list.
 
 \subsection{Measures and Statistics}
-Table~\ref{tab:measures} defines the measures. Our main error measure is the \emph{typical miss}, the median percentage error: an LLM value 25\,\% above or 25\,\% below Google's both count as a 25\,\% miss. The 28 queries of one route are not independent, so 95\,\% confidence intervals come from resampling whole routes 2,000 times, and group differences are tested by shuffling group labels 5,000 times on per-route values (a permutation test). Gemini and ChatGPT are compared on the same queries. Because route length differs between road types, road-type comparisons are repeated on routes of 5~km or more.
+Table~\ref{tab:measures} defines the measures. Our main error measure is the \emph{typical miss}, the median percentage error: an LLM value 25\,\% above or 25\,\% below Google's both count as a 25\,\% miss. The 28 queries of one route are not independent, so 95\,\% confidence intervals come from resampling whole routes 2,000 times (a route-level bootstrap), and group differences are tested by shuffling group labels 5,000 times on per-route values (a permutation test). Gemini and ChatGPT are compared on the same queries. Because route length differs between road types, road-type comparisons are repeated on routes of 5~km or more.
 
 \begin{table}[!htb]
 \caption{Benchmark Measures}
@@ -365,14 +356,14 @@ Traffic index & Google time / route's fastest of its 28 times & 1 is the route's
 Rush-hour multiplier & Mean of 08:00 and 18:00 / 23:00, weekdays & How much slower rush hour is than night \\
 Rank correlation & Spearman's $\rho$ & $-1$ to 1: do two series rise and fall together \\
 Road validity & Share of named roads found in the reference list & 0 to 1 \\
-Road overlap & Shared roads / roads in either list & 0 to 1 \\
-Repeat spread & Standard deviation / mean over three answers & 0: identical answers \\
+Road overlap & Shared roads / roads in either list (Jaccard index) & 0 to 1 \\
+Repeat spread & Coefficient of variation over three answers & 0: identical answers \\
 \hline
 \end{tabular}
 \end{table}
 
 \subsection{Simple Formula Baseline}
-As a rule of thumb, we estimate distance as the straight-line distance times 1.22, the median ratio of road to straight-line distance among the candidate routes, and time as that distance divided by the median speed of the traffic data of Section~IV near the same time of day, separately for weekdays and weekends. The formula knows the exact coordinates, which the LLMs do not, and its speeds come from a few days of data.
+As a rule of thumb, we estimate distance as the straight-line distance times 1.22, the median ratio of road to straight-line distance (the \emph{detour factor}) among the candidate routes, and time as that distance divided by the median speed of the traffic data of Section~IV near the same time of day, separately for weekdays and weekends. The formula knows the exact coordinates, which the LLMs do not, and its speeds come from a few days of data.
 
 % ======================================================================
 \section{Results}
