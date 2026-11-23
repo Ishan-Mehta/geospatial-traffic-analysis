@@ -584,28 +584,10 @@ The road-by-road answers show that a good total does not mean good parts: errors
 Prompt wording explains only part of the rush-hour bias. The earlier wording mainly inflated 08:00, but with neutral wording rush hour is still about twice the night time, and asking for road-by-road times raised this ratio further. A study of LLM travel times should therefore report both the wording and the answer format.
 
 \subsection{Earlier Expectations}
-Table~\ref{tab:expectations} compares the results with what we expected at the start of the project. Two expectations, that giving the model map context would help and that an India-focused map service would match Google more closely, were not tested in this benchmark.
-
-\begin{table}[!htb]
-\caption{Earlier Expectations and Outcomes}
-\label{tab:expectations}
-\centering
-\footnotesize
-\begin{tabular}{L{2.5cm}L{1.6cm}L{3.5cm}}
-\hline
-What we expected & What we found & Evidence \\
-\hline
-Main roads easier than side roads & Distance yes, time no & Routes of 5~km or more: distance miss 11\,\% vs 23\,\% ($p=0.006$); time $p=0.59$ \\
-Travel times weaker than distances & Yes & Typical miss 23\,\% for time, 14\,\% for distance \\
-Routes through variable legs harder & No & Time miss 23\,\% vs 22\,\% ($p=1.0$) \\
-Added road context helps & Not tested & -- \\
-India-specific tools do better & Not tested & -- \\
-\hline
-\end{tabular}
-\end{table}
+At the start of the project we expected travel times to be weaker than distances, and they were (typical miss 23\,\% against 14\,\%). We expected main roads to be easier than side roads; this held for distance but not for time (Table~\ref{tab:group_tests}). Routes through the variable legs were not harder, against our expectation. Two further expectations, that giving the model map context would help and that an India-focused map service would match Google more closely, were not tested.
 
 \subsection{Practical Meaning}
-Compared with Google, Gemini gives a usable rough distance between well-known places more than 5~km apart. Its travel times are biased in a predictable way: on weekdays about 30\,\% too slow at 08:00 and 18:00 and 25\,\% too fast at 23:00. Its road-by-road distances and times should not be trusted. A one-line rule that knows the exact coordinates, the straight-line distance times 1.22 at a typical speed, misses Google by 16\,\% in time and 10\,\% in distance, less than Gemini's 23\,\% and 14\,\%, and Gemini beats it on only 43\,\% of queries for time. Its confident ``heavy traffic'' label adds little beyond the time of day already in the question.
+For a traveller, Gemini gives a usable rough distance between well-known places more than 5~km apart. Its weekday travel times should be read as about 30\,\% too long at rush hour and 25\,\% too short at night, its road-by-road figures should not be trusted, and its ``heavy traffic'' label adds little beyond the time already in the question. A simple formula from the exact coordinates does better (Section~\ref{sec:results}).
 
 \subsection{Limitations}
 \emph{Reference.} Google's times are predictions for one week, not measured drives, so ``close to Google'' is not the same as ``close to the real trip''. The earlier prompt was compared against a different Google week. Gemini's questions contain no date, so its answers under the two prompts can be compared directly, and Google's own pattern was almost the same in both weeks.
@@ -614,16 +596,16 @@ Compared with Google, Gemini gives a usable rough distance between well-known pl
 
 \emph{Routes and roads.} Only 12 routes run mainly on smaller roads, and only six of them are 5~km or longer, so road-type results are indicative. Road matching depends on names: Google may call a road ``NH 44'' where others say ``Outer Ring Road'', so validity and overlap are lower bounds, and paired roads cover a median of 37\,\% of Google's route length.
 
-\emph{Traffic data.} The city-wide traffic data covers a short period, its readings are Google's estimates at the moment of each request, and its static duration is not an empty-road time. The simple formula's speeds come from this data, and the formula knows the exact coordinates, which the LLMs do not. Google's terms do not allow us to publish the raw responses.
+\emph{Traffic data.} The city-wide traffic data covers a short period, its readings are Google's estimates at the moment of each request, and its static duration is not an empty-road time. The simple formula's speeds come from this data, and the formula knows the exact coordinates, which the LLMs do not.
 
 % ======================================================================
 \section{Conclusion and Future Work}\label{sec:conclusion}
 
 \subsection{Conclusion}
-The answer to the research question in a few sentences.
+We asked how close an LLM, using only its own knowledge, can get to Google Maps on routes, distances and travel times in Bangalore. For Gemini, the answer depends on what is asked. It knows where well-known places are and names real roads, but it chooses only a fifth of the roads on Google's route. Its distances are fairly close, with a typical miss of 14\,\%. Its travel times are weaker, with a typical miss of 23\,\%, and their average looks right only because they are too slow in rush hour and too fast at night: Gemini adds a similar rush-hour penalty to every trip, set by the clock rather than by the road. It does worst on short trips, and its road-by-road figures are far less reliable than its totals. Removing rush-hour wording from the prompt reduced the morning bias but did not remove it, and the answer format changed the results as much as the wording. A one-line formula that knows the exact coordinates beat Gemini on both distance and time. Gemini's travel times are therefore a rough guide at best and no substitute for a navigation tool. Along the way, the city-wide traffic data showed that Google's static duration is not an empty-road time, and that most of the variation on Bangalore's main roads follows a daily cycle that peaks at 18:00.
 
 \subsection{Future Work}
-Next steps: road context, more reasoning, more LLMs, MapmyIndia, more side-road routes and live traffic.
+The first next step is to run ChatGPT on the same queries. The benchmark can then test whether giving the model map context, such as the roads near a trip, closes the gap, and whether higher reasoning settings help. Asking at more morning times would test whether Bangalore's morning peak comes later than 08:00. More routes on smaller roads would make the road-type comparison firmer, and comparing with MapmyIndia, an India-focused map service, or with measured trip times would show how much of the remaining gap lies in the reference rather than in the model.
 
 % ======================================================================
 \section*{Acknowledgment}
