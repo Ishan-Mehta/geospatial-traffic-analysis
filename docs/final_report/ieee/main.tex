@@ -45,11 +45,12 @@ email address}
 \maketitle
 
 \begin{abstract}
-We build a memory-efficient ETL (extract, transform, load) pipeline that turns Bangalore's official lists of major roads into traffic readings from Google's Routes API. [Rest of the abstract: the question, the comparison, the main results and what they mean. Write this last.]
+% When ChatGPT results exist, add one sentence comparing it with Gemini.
+Large language models (LLMs) are now asked how long a drive will take, although they have no map or traffic feed. We test how close an LLM, using only its own knowledge, gets to Google Maps on routes, distances and travel times in Bangalore. A memory-efficient ETL (extract, transform, load) pipeline first turns the city's official road lists into a week of Google Maps traffic readings, which guide the choice of test routes. Google Maps and Gemini then answer the same 2,016 queries: 72 trips between landmarks at four times on each day of a week. Gemini places landmarks well and names real roads, but only a fifth of Google's. Its distances miss Google's predictions by a typical 14\,\% and its times by 23\,\%: about 30\,\% too long at weekday rush hour and 25\,\% too short at night, as it adds a similar rush-hour penalty to every trip. Neutral prompt wording reduces this bias but does not remove it, and a simple formula from exact coordinates beats Gemini on both distance and time.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Four to six search terms for the topic, method and city.
+large language models, geospatial knowledge, travel time estimation, Google Maps, urban traffic, benchmark
 \end{IEEEkeywords}
 
 % ======================================================================
@@ -117,12 +118,12 @@ Two further studies shape our design. Akbar et al.~\cite{akbar2023} measured tra
 Google Maps plays two roles in this work. It is the reference that the LLMs are scored against, and before the benchmark it was our source for understanding how traffic moves in Bangalore. We therefore collected two kinds of data from it. The first is a city-wide set of traffic readings on the main roads, taken every two hours for a week. It shows when and where traffic is heavy, and we use it to choose benchmark routes that cover changeable roads and to set the speeds of a simple baseline. The second is Google's answer to every benchmark query, the ground truth for the results in Section~\ref{sec:results}.
 
 \subsection{City-Wide Traffic Data}\label{sec:traffic_data}
-The Bruhat Bengaluru Mahanagara Palike (BBMP), the city's municipal body, publishes lists of 80 arterial and 285 sub-arterial roads as PDF files. We typed them into one table and wrote each road as a chain of places: its origin, the places it passes and its destination. Names that cannot be placed on a map, such as ``Ring Road'' or ``BBMP Limit'', were removed with a short blocklist, as were names containing ``Road'' without a landmark word such as ``Cross'' or ``Circle''. The rest were converted to coordinates with the Google Geocoding API. Of the 365 roads, 87 kept fewer than two located places and were dropped. Two overlap rules, applied to coordinates rounded to about 11~m, removed five more: of two routes with the same ends we kept the one with more places in between, and a route lying wholly inside a longer one was dropped. This left 273 routes, 74 arterial and 199 sub-arterial (Fig.~\ref{fig:route_geometries}).
+The city's municipal body, the Bruhat Bengaluru Mahanagara Palike (BBMP), lists 80 arterial and 285 sub-arterial roads. We wrote each road as a chain of places: its origin, the places it passes and its destination. Names that cannot be placed on a map, such as ``Ring Road'' or ``BBMP Limit'', were removed with a short blocklist, as were names containing ``Road'' without a landmark word such as ``Cross'' or ``Circle''. The rest were converted to coordinates with the Google Geocoding API. Of the 365 roads, 87 kept fewer than two located places and were dropped. Two overlap rules, applied to coordinates rounded to about 11~m, removed five more: of two routes with the same ends we kept the one with more places in between, and a route lying wholly inside a longer one was dropped. This left 273 routes, 74 arterial and 199 sub-arterial (Fig.~\ref{fig:route_geometries}).
 
 \begin{figure}[!htb]
 \centering
-\includegraphics[height=3.4cm]{figures/fig_routes_arterial.jpg}\hfill
-\includegraphics[height=3.4cm]{figures/fig_routes_subarterial.jpg}
+\includegraphics[height=3.1cm]{figures/fig_routes_arterial.jpg}\hfill
+\includegraphics[height=3.1cm]{figures/fig_routes_subarterial.jpg}
 \caption{Arterial (left) and sub-arterial (right) routes drawn in QGIS as shortest paths on OpenStreetMap, before overlapping routes were removed. Base map \copyright{} OpenStreetMap contributors.}
 \label{fig:route_geometries}
 \end{figure}
@@ -147,7 +148,7 @@ We call the fifth of legs with the highest variation, 0.28 or more (113 legs), t
 
 \begin{figure}[!htb]
 \centering
-\includegraphics[width=0.7\linewidth,trim=0 0 0 43pt,clip]{figures/fig_legs_map.pdf}
+\includegraphics[width=0.62\linewidth,trim=0 0 0 43pt,clip]{figures/fig_legs_map.pdf}
 \caption{The 564 road legs used in the analysis. Red: the variable legs, the fifth with the highest variation.}
 \label{fig:legs_map}
 \end{figure}
@@ -299,7 +300,7 @@ As a rule of thumb, we estimate distance as the straight-line distance times 1.2
 \section{Results}\label{sec:results}
 % ChatGPT has not been run yet. When its answers exist, add a ChatGPT column to each table
 % and a ChatGPT series to each figure, and rename the subsections back to "the LLMs".
-This section answers the five questions of Section~I in turn. It first describes Google's reference answers, then Gemini's knowledge of places and roads, its distances and times, its sense of traffic over the day, the trips where it does worst, and the effect of the prompt. ChatGPT has not been run yet, so the results are for Gemini; Google Maps is the reference throughout.
+This section answers the five questions of Section~I in turn, after a look at Google's reference answers. ChatGPT has not been run yet, so the results are for Gemini; Google Maps is the reference throughout.
 
 \subsection{Google Maps Reference}
 All 2,016 Google requests succeeded, and every start and end point lay within the allowed distance of its landmark. Table~\ref{tab:route_groups} shows the 72 routes by length and road type. Google's predicted traffic follows a clear weekly pattern (Fig.~\ref{fig:google_heatmap}). On weekdays, the median route is 19\,\% above its fastest time at 08:00, 35\,\% at 14:00, 63\,\% at 18:00 and 5\,\% at 23:00. Weekends are lighter in the morning and evening, and on Sunday morning routes are almost at their fastest. Google used more than one path during the week on 37 of the 72 routes.
@@ -449,7 +450,7 @@ Simple formula, weekday & 0.90 & 0.90 & 0.86 & 0.89 \\
 \end{figure}
 
 \subsubsection{Road Choice}
-Of the roads Gemini names, 60\,\% are on Google's route (precision), but it names only 20\,\% of Google's roads (recall), and the overlap of the two lists is 0.17 (Table~\ref{tab:road_overlap}). All three fall on routes along smaller roads. Gemini names a median of four roads per answer, while Google's route has a median of six. In the road-by-road comparison, 90\,\% of queries have at least one road that pairs with a Google sub-route, with 1.7 pairs per query covering a median of 37\,\% of Google's route length. On these roads Gemini's distances and times are about 20\,\% too high, with a typical miss of 48\,\% for distance and 47\,\% for time, although its road values always add up to its own totals. The time-of-day pattern repeats at road level: the paired-road time ratio is 1.28 at 08:00, 1.13 at 14:00, 1.49 at 18:00 and 0.89 at 23:00.
+Of the roads Gemini names, 60\,\% are on Google's route (precision), but it names only 20\,\% of Google's roads (recall), and the overlap of the two lists is 0.17 (Table~\ref{tab:road_overlap}). All three fall on routes along smaller roads. Gemini names a median of four roads per answer, while Google's route has a median of six. Road by road, 90\,\% of queries have at least one road that pairs with a Google sub-route; the 1.7 pairs per query cover a median of 37\,\% of Google's route. On these roads Gemini's distances and times are about 20\,\% too high, with a typical miss of 48\,\% for distance and 47\,\% for time, although its road values always add up to its own totals. The time-of-day pattern repeats at road level: the paired-road time ratio is 1.28 at 08:00, 1.13 at 14:00, 1.49 at 18:00 and 0.89 at 23:00.
 
 Fig.~\ref{fig:paths} draws two trips. On the first, Gemini names the Outer Ring Road, which carries most of Google's path, yet the overlap score is only 0.09 because Google's route lists many short named stretches; a low overlap can therefore hide a sensible route. On the second, Gemini gives the direct 1.2~km along Mahatma Gandhi Road, while Google's path loops north for 3.2~km, possibly because of one-way streets around Trinity Circle.
 
@@ -477,7 +478,7 @@ All routes & 0.17 & 0.20 & 0.60 \\
 \end{table}
 
 \subsubsection{Repeat Answers}
-The 280 queries of the ten repeat routes were each answered three times. Distances vary by 3.9\,\% and times by 5.8\,\% between answers, the traffic level is the same in 93\,\% of queries, and the road lists of two answers overlap by 0.43 on average (Table~\ref{tab:checks}). Gemini's errors are therefore mostly repeated, not random.
+Asked three times, the 280 queries of the ten repeat routes vary by 3.9\,\% in distance and 5.8\,\% in time, and keep the same traffic level in 93\,\% of cases (Table~\ref{tab:checks}), so Gemini's errors are mostly repeated, not random.
 
 \subsubsection{Simple Formula}
 The simple formula misses Google by 16\,\% in time and 10\,\% in distance (Table~\ref{tab:accuracy}), and its times are about 10\,\% too fast at every time of day. Gemini beats it on 43\,\% of queries for time and 46\,\% for distance. Only at 14:00 is Gemini better, with a typical time miss of 14\,\% against 16\,\%, winning on 59\,\% of queries; at the other three times it wins on 32 to 41\,\%.
@@ -584,13 +585,13 @@ The road-by-road answers show that a good total does not mean good parts: errors
 Prompt wording explains only part of the rush-hour bias. The earlier wording mainly inflated 08:00, but with neutral wording rush hour is still about twice the night time, and asking for road-by-road times raised this ratio further. A study of LLM travel times should therefore report both the wording and the answer format.
 
 \subsection{Earlier Expectations}
-At the start of the project we expected travel times to be weaker than distances, and they were (typical miss 23\,\% against 14\,\%). We expected main roads to be easier than side roads; this held for distance but not for time (Table~\ref{tab:group_tests}). Routes through the variable legs were not harder, against our expectation. Two further expectations, that giving the model map context would help and that an India-focused map service would match Google more closely, were not tested.
+At the start of the project we expected travel times to be weaker than distances, and they were (typical miss 23\,\% against 14\,\%). We expected main roads to be easier than side roads; this held for distance but not for time (Table~\ref{tab:group_tests}). Routes through the variable legs were not harder, against our expectation. Whether map context or an India-focused map service would help was not tested.
 
 \subsection{Practical Meaning}
-For a traveller, Gemini gives a usable rough distance between well-known places more than 5~km apart. Its weekday travel times should be read as about 30\,\% too long at rush hour and 25\,\% too short at night, its road-by-road figures should not be trusted, and its ``heavy traffic'' label adds little beyond the time already in the question. A simple formula from the exact coordinates does better (Section~\ref{sec:results}).
+For a traveller, Gemini gives a usable rough distance between well-known places more than 5~km apart. Its weekday travel times should be read as about 30\,\% too long at rush hour and 25\,\% too short at night, its road-by-road figures should not be trusted, and its ``heavy traffic'' label adds little beyond the time already in the question.
 
 \subsection{Limitations}
-\emph{Reference.} Google's times are predictions for one week, not measured drives, so ``close to Google'' is not the same as ``close to the real trip''. The earlier prompt was compared against a different Google week. Gemini's questions contain no date, so its answers under the two prompts can be compared directly, and Google's own pattern was almost the same in both weeks.
+\emph{Reference.} Google's times are predictions for one week, not measured drives, so ``close to Google'' is not the same as ``close to the real trip''. The earlier prompt ran against a different Google week, but Gemini's questions contain no date and Google's pattern was almost the same in both weeks.
 
 \emph{Models and prompts.} Only Gemini has been tested so far, at one setting (lowest reasoning, temperature 1.0), and results may change with later model versions. The neutral prompt still asks the model to consider the time of day. The earlier and neutral prompts differ in several places at once; the format-control run separates the answer format from the wording, but not the individual wording changes from each other.
 
@@ -602,17 +603,17 @@ For a traveller, Gemini gives a usable rough distance between well-known places 
 \section{Conclusion and Future Work}\label{sec:conclusion}
 
 \subsection{Conclusion}
-We asked how close an LLM, using only its own knowledge, can get to Google Maps on routes, distances and travel times in Bangalore. For Gemini, the answer depends on what is asked. It knows where well-known places are and names real roads, but it chooses only a fifth of the roads on Google's route. Its distances are fairly close, with a typical miss of 14\,\%. Its travel times are weaker, with a typical miss of 23\,\%, and their average looks right only because they are too slow in rush hour and too fast at night: Gemini adds a similar rush-hour penalty to every trip, set by the clock rather than by the road. It does worst on short trips, and its road-by-road figures are far less reliable than its totals. Removing rush-hour wording from the prompt reduced the morning bias but did not remove it, and the answer format changed the results as much as the wording. A one-line formula that knows the exact coordinates beat Gemini on both distance and time. Gemini's travel times are therefore a rough guide at best and no substitute for a navigation tool. Along the way, the city-wide traffic data showed that Google's static duration is not an empty-road time, and that most of the variation on Bangalore's main roads follows a daily cycle that peaks at 18:00.
+We asked how close an LLM, using only its own knowledge, can get to Google Maps on routes, distances and travel times in Bangalore. For Gemini, the answer depends on what is asked. It knows where well-known places are and names real roads, but it chooses only a fifth of the roads on Google's route. Its distances are fairly close, with a typical miss of 14\,\%. Its travel times are weaker, with a typical miss of 23\,\%, and their average looks right only because they are too slow in rush hour and too fast at night: Gemini adds a similar rush-hour penalty to every trip, set by the clock rather than by the road. It does worst on short trips, and its road-by-road figures are far less reliable than its totals. Removing rush-hour wording from the prompt reduced the morning bias but did not remove it, and the answer format changed the results as much as the wording. A one-line formula that knows the exact coordinates beat Gemini on both distance and time. Gemini's travel times are therefore a rough guide at best and no substitute for a navigation tool. The city-wide traffic data also showed that Google's static duration is not an empty-road time and that traffic on the main roads follows a daily cycle that peaks at 18:00.
 
 \subsection{Future Work}
-The first next step is to run ChatGPT on the same queries. The benchmark can then test whether giving the model map context, such as the roads near a trip, closes the gap, and whether higher reasoning settings help. Asking at more morning times would test whether Bangalore's morning peak comes later than 08:00. More routes on smaller roads would make the road-type comparison firmer, and comparing with MapmyIndia, an India-focused map service, or with measured trip times would show how much of the remaining gap lies in the reference rather than in the model.
+The first next step is to run ChatGPT on the same queries. The benchmark can then test whether giving the model map context, such as the roads near a trip, closes the gap, and whether higher reasoning settings help. Asking at more morning times would test whether Bangalore's morning peak comes later than 08:00. More side-road routes would firm up the road-type comparison, and comparing with MapmyIndia, an India-focused map service, or with measured trip times would show how much of the gap lies in the reference.
 
 % ======================================================================
 \section*{Acknowledgment}
-Thanks to the supervisor, Prof. Vinayak Naik, and to others who helped.
+We thank our supervisor, Prof. Vinayak Naik.
 
 \section*{Data Availability}
-What can be shared, and why raw Google and LLM data is not published.
+Code and aggregate results: [repository link]. Raw Google Maps and LLM responses are not published, as Google's terms do not allow it.
 
 % References: each was checked to exist; the author should read each one before submission.
 \begin{thebibliography}{00}
