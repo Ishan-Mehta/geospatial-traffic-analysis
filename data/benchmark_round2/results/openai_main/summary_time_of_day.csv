@@ -1,0 +1,9 @@
+day_type,slot_id,llm_rel_night,google_rel_night,time_ratio,llm_heavy_share,google_traffic_index
+weekday,AM_PEAK,1.732,1.134,1.593,0.803,1.19
+weekday,MID_DAY,1.397,1.249,1.196,0.0,1.347
+weekday,PM_PEAK,1.907,1.519,1.377,0.95,1.626
+weekday,NIGHT,0.99,0.996,1.069,0.0,1.05
+weekend,AM_PEAK,1.315,0.991,1.434,0.0,1.05
+weekend,MID_DAY,1.32,1.23,1.163,0.0,1.338
+weekend,PM_PEAK,1.541,1.29,1.284,0.264,1.406
+weekend,NIGHT,0.98,1.011,1.061,0.0,1.076

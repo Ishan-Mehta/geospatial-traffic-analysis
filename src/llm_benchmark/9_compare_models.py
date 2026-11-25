@@ -6,7 +6,7 @@ data/benchmark_round2/results/<model>/ for every model that has them, and writes
 Run 5_compare_results_v2.py (and 7_subroutes_r2.py) for each model first.
 
 Usage: BENCHMARK_ROUND=2 python 9_compare_models.py [--models gemini_38_flash,openai_main]
-Outputs: data/benchmark_round2/results/summary_models.csv,
+Outputs: data/benchmark_round2/results/summary_models.csv, summary_models_paired_tests.csv,
          docs/benchmark/round2/figures/fig_M1_time_by_slot_models.png, fig_M2_day_shape_models.png
 """
 
@@ -75,6 +75,27 @@ def day_shape(model: str) -> pd.DataFrame:
     return pd.DataFrame(out)
 
 
+def paired_tests(models: list) -> pd.DataFrame:
+    """Every pair of models on the same routes: per-route median |log(LLM ÷ Google)| (lower = better), median
+    difference, share of routes where the first model is better, and a two-sided sign-flip permutation p-value."""
+    rng = np.random.default_rng(42)
+    rows = []
+    rm = {m: pd.read_csv(next(C.results_dir(m).glob("route_metrics_*_A.csv"))).set_index("route_id") for m in models}
+    for i, a in enumerate(models):
+        for b in models[i + 1:]:
+            for metric, name in (("med_abs_lr_dist", "distance error"), ("med_abs_lr_time", "time error")):
+                d = (rm[a][metric] - rm[b][metric]).dropna().values
+                obs = np.median(d)
+                flips = rng.choice([-1, 1], size=(10000, len(d)))
+                p = float((np.abs(np.median(flips * d, axis=1)) >= abs(obs)).mean())
+                rows.append({"model_a": label(a), "model_b": label(b), "metric": name, "routes": len(d),
+                             "median_a": round(float(rm[a][metric].median()), 4),
+                             "median_b": round(float(rm[b][metric].median()), 4),
+                             "median_difference_a_minus_b": round(float(obs), 4),
+                             "share_routes_a_better": round(float((d < 0).mean()), 3), "perm_p": round(p, 4)})
+    return pd.DataFrame(rows)
+
+
 def plots(models: list, rows: list, out):
     import matplotlib
     matplotlib.use("Agg")
@@ -125,6 +146,10 @@ def main():
     table = pd.DataFrame(rows).set_index("model").T
     table.to_csv(base / "summary_models.csv")
     print(table.to_string())
+    if len(models) > 1:
+        tests = paired_tests(models)
+        tests.to_csv(base / "summary_models_paired_tests.csv", index=False)
+        print("\nPaired route-level tests (|log ratio|, lower = better):\n" + tests.to_string(index=False))
     plots(models, rows, C._PROJECT_ROOT / "docs" / "benchmark" / "round2" / "figures")
     print(f"Saved {base / 'summary_models.csv'} and figures fig_M1/fig_M2")
 

@@ -1,0 +1,8 @@
+,value
+n_queries_with_3_samples,280.0
+cv_distance_median,0.1164
+cv_time_median,0.117
+label_identical_share,0.907
+roads_jaccard_between_samples_mean,0.357
+time_max_over_min_median,1.311
+error_time_abs_lr_median_main,0.303

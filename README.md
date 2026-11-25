@@ -1,8 +1,8 @@
 # Benchmarking LLMs against Navigation Tools — Bangalore
 
 How close can a large language model, using only its own knowledge, get to Google Maps on routes, distances and travel
-times in Bangalore? The project builds a Bangalore traffic dataset and then benchmarks LLMs (Gemini; ChatGPT in
-progress) against Google Maps on the same trips.
+times in Bangalore? The project builds a Bangalore traffic dataset and then benchmarks LLMs (Gemini and ChatGPT)
+against Google Maps on the same trips.
 
 **Ishan Mehta** · Supervisor: **Prof. Vinayak Naik** · Department of Computer Science, BITS Pilani, K K Birla Goa Campus
 
@@ -52,7 +52,7 @@ The project has two parts: a live traffic analysis of Bangalore's main roads (St
   |---|---|---|---|---|
   | Pilot (v1) | first design, 14 short road segments | — | — | Gemini |
   | Round 1 | original prompt (time labels such as "Morning Rush") | 5–11 Oct 2026 | — | Gemini |
-  | Round 2 | neutral prompt (clock time only) | 28 Nov – 4 Dec 2026 | sub-routes (road-by-road distance and time) | Gemini; ChatGPT pending |
+  | Round 2 | neutral prompt (clock time only) | 28 Nov – 4 Dec 2026 | sub-routes (road-by-road distance and time) | Gemini, ChatGPT |
 
 ## Project structure
 ```
@@ -135,14 +135,18 @@ python 9_compare_models.py                                                  # Go
 ```
 
 ## Results
-- Gemini knows the landmarks (all placed correctly, typically ~250 m off) and names real roads (≥ 95 %); distances are
-  typically within 13–14 % of Google.
-- Travel times miss by about 22 % and follow a city-wide stereotype: rush-hour trips take about twice as long as at
-  night (Google: about 1.3 times), on all 72 routes, with short trips exaggerated most.
-- The neutral prompt mainly changed 08:00 (fewer "heavy" labels, shorter times) but did not remove the stereotype.
-  Road-by-road estimates are much less accurate than the totals (errors cancel out).
+- **Places and roads:** both LLMs know the landmarks and name mostly real roads; Gemini more precisely (landmarks
+  typically ~250 m off vs ~650 m for ChatGPT).
+- **Distance and time:** Gemini's distances are typically within 14 % of Google and its times within 23 %; ChatGPT's
+  are worse (31 % and 32 %) and mostly too long. Gemini is more accurate on 78 % of routes for distance and 63 % for time.
+- **Traffic:** both follow a city-wide stereotype rather than route-specific knowledge: rush-hour trips take about
+  2.4 (Gemini) or 1.8 (ChatGPT) times the night time, against about 1.3 for Google, and traffic labels follow the clock.
+- **Prompt wording:** removing the biased wording mainly changed 08:00 and did not remove the stereotype. Road-by-road
+  estimates are much less accurate than the totals.
+- **Baseline:** a simple formula (straight-line distance and a typical speed for the hour) beats both LLMs on travel
+  time for most queries (57 % against Gemini, 65 % against ChatGPT).
 
-Details: [Round 1 findings](docs/benchmark/round1/FINDINGS.md) · [Round 2 results](docs/benchmark/round2/RESULTS.md) ·
+Details: [Round 2 results](docs/benchmark/round2/RESULTS.md) · [Round 1 findings](docs/benchmark/round1/FINDINGS.md) ·
 [methodology](docs/benchmark/METHODOLOGY.md) · [pilot audit](docs/benchmark/pilot_v1_audit.md).
 
 ## Data availability

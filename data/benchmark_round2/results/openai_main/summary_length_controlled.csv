@@ -1,0 +1,15 @@
+check,metric,value_a,value_b,n_a,n_b,perm_p
+"arterial vs sub-arterial, routes >= 5 km",med_abs_lr_dist,0.2149,0.278,37,6.0,0.4537
+"arterial vs sub-arterial, routes >= 5 km",med_abs_lr_time,0.2345,0.2738,37,6.0,0.4415
+"arterial vs sub-arterial, routes >= 5 km",jaccard,0.1151,0.057,37,6.0,0.0626
+"arterial vs sub-arterial, routes >= 5 km",recall,0.1323,0.0657,37,6.0,0.0524
+"arterial vs sub-arterial, routes >= 5 km",validity,0.9577,0.8378,37,6.0,0.013
+"spearman(arterial_share, metric) within B1_1-5km",med_abs_lr_dist,-0.118,,17,,
+"spearman(arterial_share, metric) within B1_1-5km",med_abs_lr_time,0.115,,17,,
+"spearman(arterial_share, metric) within B1_1-5km",jaccard,0.51,,17,,
+"spearman(arterial_share, metric) within B2_5-12km",med_abs_lr_dist,-0.183,,27,,
+"spearman(arterial_share, metric) within B2_5-12km",med_abs_lr_time,-0.165,,27,,
+"spearman(arterial_share, metric) within B2_5-12km",jaccard,0.564,,27,,
+"spearman(arterial_share, metric) within B3_12-25km",med_abs_lr_dist,-0.065,,28,,
+"spearman(arterial_share, metric) within B3_12-25km",med_abs_lr_time,-0.167,,28,,
+"spearman(arterial_share, metric) within B3_12-25km",jaccard,0.574,,28,,

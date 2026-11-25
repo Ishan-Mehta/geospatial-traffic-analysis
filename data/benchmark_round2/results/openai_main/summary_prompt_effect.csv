@@ -1,0 +1,3 @@
+subset,version,routes,queries,peak_night_ratio,distance_km_median,weekday_min_AM_PEAK,weekday_heavy_AM_PEAK,weekday_min_MID_DAY,weekday_heavy_MID_DAY,weekday_min_PM_PEAK,weekday_heavy_PM_PEAK,weekday_min_NIGHT,weekday_heavy_NIGHT
+10 repeat routes,control,10,280,1.603,11.5,40.0,0.86,35.0,0.0,45.0,0.96,25.0,0.0
+10 repeat routes,round2,10,280,1.792,13.0,50.5,0.82,40.5,0.0,56.0,0.92,30.5,0.0
