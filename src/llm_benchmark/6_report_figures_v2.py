@@ -2,11 +2,11 @@
 Step 6 (v2) — report figures for the professor update (Phase 5). Offline, NO API calls.
 
   fig_A_routes_map.png      the 72 benchmark routes (Google's Wednesday-midday path) over Bangalore's main roads
-  fig_B_time_by_slot.png    typical weekday travel time at each time of day: Google vs Gemini
+  fig_B_time_by_slot.png    typical weekday travel time at each time of day: Google vs the LLM
   fig_C_day_shape.png       shape of the day: time relative to the same trip at weekday night (weekday | weekend)
-  fig_D_rush_multiplier.png per-trip rush-hour multiplier (peak ÷ night), Gemini vs Google, by trip length
-  fig_E_distance_time.png   every query: Gemini vs Google distance and time (log axes)
-  fig_F_traffic_labels.png  Gemini's weekday traffic label by time of day, with Google's traffic index
+  fig_D_rush_multiplier.png per-trip rush-hour multiplier (peak ÷ night), LLM vs Google, by trip length
+  fig_E_distance_time.png   every query: LLM vs Google distance and time (log axes)
+  fig_F_traffic_labels.png  the LLM's weekday traffic label by time of day, with Google's traffic index
   fig_G_google_heatmap.png  Google's traffic index by day and time of day
   fig_H_where_worst.png     typical miss by trip length; main vs smaller roads on trips >= 5 km
 
@@ -28,6 +28,8 @@ GOOGLE, GEMINI = "#2a78d6", "#eb6834"             # palette slots 1 (blue) and 2
 CAT3 = ["#2a78d6", "#eb6834", "#1baf7a"]           # palette slots 1-3 (validated all-pairs) for 3 categories
 SEQ = ["#cde2fb", "#86b6ef", "#2a78d6", "#104281"] # sequential blue steps 100/250/450/650 (none→heavy)
 SLOTS = ["AM_PEAK", "MID_DAY", "PM_PEAK", "NIGHT"]
+LLM, LLM_COLOUR = "Gemini", GEMINI                 # set per model in main()
+MODEL_LOOK = {"gemini": ("Gemini", GEMINI), "openai": ("ChatGPT", "#1baf7a")}   # same colours as 9_compare_models
 BANDS = {"B1_1-5km": "1–5 km", "B2_5-12km": "5–12 km", "B3_12-25km": "12–29 km"}
 INK, INK2, GRID = "#0b0b0b", "#52514e", "#e4e3df"
 SLOT_LABELS = {"AM_PEAK": "8 am", "MID_DAY": "2 pm", "PM_PEAK": "6 pm", "NIGHT": "11 pm"}
@@ -78,7 +80,7 @@ def fig_time_by_slot(out, plt, model):
     w = 0.36
     fig, ax = plt.subplots(figsize=(6.6, 3.6))
     bg = ax.bar(x - w / 2 - 0.01, g.values, w, color=GOOGLE, label="Google Maps (predicted)", zorder=2)
-    bl = ax.bar(x + w / 2 + 0.01, l.values, w, color=GEMINI, label="Gemini (no map access)", zorder=2)
+    bl = ax.bar(x + w / 2 + 0.01, l.values, w, color=LLM_COLOUR, label=f"{LLM} (no map access)", zorder=2)
     for rect in list(bg) + list(bl):                 # value labels in text ink
         ax.text(rect.get_x() + rect.get_width() / 2, rect.get_height() + 0.6, f"{rect.get_height():.0f}",
                 ha="center", va="bottom", fontsize=9, color=INK2)
@@ -91,7 +93,7 @@ def fig_time_by_slot(out, plt, model):
     ax.yaxis.grid(True, color=GRID, lw=0.8, zorder=0)
     ax.set_axisbelow(True)
     ax.legend(frameon=False, loc="upper left", fontsize=9, ncol=2)
-    ax.set_title("Weekday trip time by time of day (bold = Gemini vs Google)", fontsize=11, color=INK, loc="left")
+    ax.set_title(f"Weekday trip time by time of day (bold = {LLM} vs Google)", fontsize=11, color=INK, loc="left")
     fig.savefig(out / "fig_B_time_by_slot.png", dpi=200, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     return pd.DataFrame({"google_min": g.round(1), "gemini_min": l.round(1), "median_gap": diff.round(3)})
@@ -121,7 +123,7 @@ def fig_day_shape(out, plt, model):
     for ax, wkend, name in ((axes[0], False, "Weekdays"), (axes[1], True, "Weekends")):
         d = c[c.is_weekend == wkend].groupby("slot_id")[["google_rel", "gemini_rel"]].median().reindex(SLOTS)
         rows[name] = d.round(2)
-        for col, colr, lab, mk in (("google_rel", GOOGLE, "Google Maps", "o"), ("gemini_rel", GEMINI, "Gemini", "s")):
+        for col, colr, lab, mk in (("google_rel", GOOGLE, "Google Maps", "o"), ("gemini_rel", LLM_COLOUR, LLM, "s")):
             ax.plot(x, d[col].values, color=colr, lw=2, marker=mk, ms=8, mec="white", mew=2, zorder=3, label=lab)
             for xi, v, sl in zip(x, d[col].values, SLOTS):
                 if sl == "NIGHT":                      # both lines meet near 1.0: label beside the point
@@ -151,21 +153,21 @@ def fig_rush_multiplier(out, plt, model):
     fig, ax = plt.subplots(figsize=(5.6, 4.6))
     lim = (0.85, max(3.25, float(r.pn_llm.max()) + 0.15))
     ax.plot(lim, lim, color=INK2, lw=0.8, ls=":", zorder=1)
-    ax.text(2.55, 2.42, "Gemini = Google", rotation=38, fontsize=8.5, color=INK2)
+    ax.text(2.55, 2.42, f"{LLM} = Google", rotation=38, fontsize=8.5, color=INK2)
     for (band, lab), colr in zip(BANDS.items(), CAT3):
         g = r[r.band_google == band]
         ax.scatter(g.pn_google, g.pn_llm, s=46, color=colr, edgecolor="white", linewidth=1.2, zorder=3,
-                   label=f"{lab} trips (Gemini median {g.pn_llm.median():.2f}, Google {g.pn_google.median():.2f})")
+                   label=f"{lab} trips ({LLM} median {g.pn_llm.median():.2f}, Google {g.pn_google.median():.2f})")
     o = r.loc[r.pn_google.idxmin()]
     ax.annotate(f"{o.origin_name} → {o.dest_name}:\nGoogle says night is slower", (o.pn_google, o.pn_llm),
                 xytext=(0.9, 1.4), fontsize=8, color=INK2, va="top",
                 arrowprops=dict(arrowstyle="-", color=INK2, lw=0.7, relpos=(0.03, 1)))
     ax.set_xlim(lim), ax.set_ylim(lim)
     ax.set_xlabel("Google: rush-hour time ÷ night time")
-    ax.set_ylabel("Gemini: rush-hour time ÷ night time")
+    ax.set_ylabel(f"{LLM}: rush-hour time ÷ night time")
     ax.legend(frameon=False, loc="upper right", fontsize=7.5, handletextpad=0.2)
     above = int((r.pn_llm > r.pn_google).sum())
-    _finish(ax, f"Rush-hour slowdown per trip (weekdays): Gemini higher on {above} of {len(r)}")
+    _finish(ax, f"Rush-hour slowdown per trip (weekdays): {LLM} higher on {above} of {len(r)}")
     ax.xaxis.grid(True, color=GRID, lw=0.8, zorder=0)
     fig.savefig(out / "fig_D_rush_multiplier.png", dpi=200, bbox_inches="tight", facecolor="white")
     plt.close(fig)
@@ -192,7 +194,7 @@ def fig_distance_time(out, plt, model):
         ticks = [t for t in (1, 2, 5, 10, 20, 50, 100) if lo <= t <= hi]
         ax.set_xticks(ticks, [str(t) for t in ticks]), ax.set_yticks(ticks, [str(t) for t in ticks])
         ax.minorticks_off()
-        ax.set_xlabel(f"Google ({unit})"), ax.set_ylabel(f"Gemini ({unit})")
+        ax.set_xlabel(f"Google ({unit})"), ax.set_ylabel(f"{LLM} ({unit})")
         med = np.exp(c[f"lr_{'dist' if title == 'Distance' else 'time'}"].median()) - 1
         _finish(ax, f"{title}: typically {med:+.0%} vs Google")
         ax.xaxis.grid(True, color=GRID, lw=0.8, zorder=0)
@@ -224,10 +226,10 @@ def fig_traffic_labels(out, plt, model):
     ax.set_xticks(x, [SLOT_LABELS[s] for s in SLOTS])
     ax.set_yticks([0, 0.5, 1], ["0%", "50%", "100%"])
     ax.set_ylim(0, 1.13)
-    ax.set_ylabel("share of Gemini's answers")
-    ax.legend(frameon=False, loc="center left", bbox_to_anchor=(1.0, 0.5), fontsize=9, title="Gemini said",
+    ax.set_ylabel(f"share of {LLM}'s answers")
+    ax.legend(frameon=False, loc="center left", bbox_to_anchor=(1.0, 0.5), fontsize=9, title=f"{LLM} said",
               title_fontsize=9)
-    _finish(ax, "Weekdays: Gemini's traffic label vs Google's slowdown")
+    _finish(ax, f"Weekdays: {LLM}'s traffic label vs Google's slowdown")
     fig.savefig(out / "fig_F_traffic_labels.png", dpi=200, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     return share.round(3), gidx.round(3)
@@ -278,7 +280,7 @@ def fig_where_worst(out, plt, model):
     a, sb = s5[s5.road_type == "arterial"], s5[s5.road_type == "sub_arterial"]
     vals = {"distance miss": (pct(a.med_abs_lr_dist.median()), pct(sb.med_abs_lr_dist.median())),
             "time miss": (pct(a.med_abs_lr_time.median()), pct(sb.med_abs_lr_time.median())),
-            "Google’s roads\nthat Gemini names": (a.recall.median(), sb.recall.median())}
+            f"Google’s roads\nthat {LLM} names": (a.recall.median(), sb.recall.median())}
     x = np.arange(3)
     for k, (off, colr, lab) in enumerate(((-0.19, GEMINI, f"main-road trips ({len(a)})"),
                                           (0.19, "#f4ae8c", f"smaller-road trips ({len(sb)})"))):
@@ -302,6 +304,8 @@ def main():
     ap.add_argument("--only", default="A,B,C,D,E,F,G,H", help="comma list of figure letters (A needs osmnx)")
     args = ap.parse_args()
     which = set(args.only.upper().split(","))
+    global LLM, LLM_COLOUR
+    LLM, LLM_COLOUR = MODEL_LOOK.get(C.V2_LLM_MODELS[args.model]["provider"], (args.model, GEMINI))
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt

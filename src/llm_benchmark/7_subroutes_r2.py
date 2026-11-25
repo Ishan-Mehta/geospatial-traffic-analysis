@@ -1,12 +1,12 @@
 """
-Step 7 (Round 2): sub-route comparison — Gemini's road-by-road answers vs Google's sub-routes. Offline, NO API calls.
+Step 7 (Round 2): sub-route comparison — an LLM's road-by-road answers vs Google's sub-routes. Offline, NO API calls.
 
 Google sub-routes (4_query_gmaps_v2.py --part subroutes): one group per named road from the turn-by-turn steps
 (exact distance, no-traffic time) and one leg per group from the stopover request (traffic-aware time; the stop sits
 40 m, or 150 m after a retry, past the road change, so leg distances are shifted by that much).
-Gemini: `suggested_route` = [{road_name, distance_km, time_minutes}, ...].
+LLM: `suggested_route` = [{road_name, distance_km, time_minutes}, ...].
 
-A Gemini road is paired with a Google sub-route when the names match (fuzzy score >= MATCH_MIN after normalisation,
+An LLM road is paired with a Google sub-route when the names match (fuzzy score >= MATCH_MIN after normalisation,
 the same rule as the Phase-4 road comparison). Google often uses highway numbers ("NH 44") where other sources use
 street names ("Outer Ring Road"), so pairing is partial; coverage is reported.
 
