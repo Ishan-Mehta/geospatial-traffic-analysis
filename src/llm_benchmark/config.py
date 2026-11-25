@@ -286,12 +286,11 @@ V2_GMAPS_SUBROUTE_FIELD_MASK = (
     "routes.legs.startLocation,routes.legs.endLocation"
 )
 V2_LLM_MODELS["openai_main"] = {
-    # Waiting for API access. Set model_name, then "reasoning_effort" to the model's lowest setting and
-    # send_temperature to False if the model refuses a temperature. Fill in the prices for the cost estimate.
-    "provider": "openai", "model_name": None, "api_key_env": "CHATGPT_API_KEY",
-    "temperature": 1.0, "send_temperature": True,
-    "conditions": {"A": {"reasoning_effort": None}},
-    "price_in_per_m": 0.0, "price_out_per_m": 0.0,
+    # ChatGPT (OpenAI Responses API). Lowest reasoning setting; same temperature as Gemini.
+    "provider": "openai", "model_name": "gpt-5.4-mini-2026-03-17", "api_key_env": "CHATGPT_API_KEY",
+    "temperature": 1.0, "send_temperature": True,                 # accepted together with effort "none" (tested)
+    "conditions": {"A": {"reasoning_effort": "none"}},             # lowest setting this model offers
+    "price_in_per_m": 0.75, "price_out_per_m": 4.50,
     "est_tokens": {"A": (200, 320)},
     "min_interval_s": 0.5,
 }
