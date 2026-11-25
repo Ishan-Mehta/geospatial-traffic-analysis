@@ -11,6 +11,7 @@
 \usepackage{textcomp}
 \usepackage{array}
 \usepackage{flafter}
+\usepackage{url}
 \usepackage{tikz}
 \usetikzlibrary{positioning,arrows.meta}
 
@@ -45,8 +46,7 @@ email address}
 \maketitle
 
 \begin{abstract}
-% When ChatGPT results exist, add one sentence comparing it with Gemini.
-Large language models (LLMs) are now asked how long a drive will take, although they have no map or traffic feed. We test how close an LLM, using only its own knowledge, gets to Google Maps on routes, distances and travel times in Bangalore. A memory-efficient ETL (extract, transform, load) pipeline first turns the city's official road lists into a week of Google Maps traffic readings, which guide the choice of test routes. Google Maps and Gemini then answer the same 2,016 queries: 72 trips between landmarks at four times on each day of a week. Gemini places landmarks well and names real roads, but only a fifth of Google's. Its distances miss Google's predictions by a typical 14\,\% and its times by 23\,\%: about 30\,\% too long at weekday rush hour and 25\,\% too short at night, as it adds a similar rush-hour penalty to every trip. Neutral prompt wording reduces this bias but does not remove it, and a simple formula from exact coordinates beats Gemini on both distance and time.
+Large language models (LLMs) are now asked how long a drive will take, although they have no map or traffic feed. We test how close two LLMs, using only their own knowledge, get to Google Maps on routes, distances and travel times in Bangalore. A memory-efficient ETL (extract, transform, load) pipeline first turns the city's official road lists into a week of Google Maps traffic readings, which guide the choice of test routes. Google Maps, Gemini and ChatGPT then answer the same 2,016 queries: 72 trips between landmarks at four times on each day of a week. Both LLMs name real roads, but only a fifth or less of Google's. Gemini misses Google's predicted distances by a typical 14\,\% and its times by 23\,\%, ChatGPT by 31\,\% and 32\,\%. Both add a similar rush-hour penalty to every trip: Gemini's times are about 30\,\% too long at weekday rush hour and 25\,\% too short at night, while ChatGPT's are too long at almost every hour. Neutral prompt wording reduces Gemini's rush-hour bias but does not remove it, and a simple formula from exact coordinates beats both LLMs on distance and time.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -67,7 +67,7 @@ Bangalore is a demanding place to test this. Its traffic changes strongly over t
 \item How much does the wording of the prompt change their answers?
 \end{enumerate}
 
-Answering these needs reliable reference data and a fair way to ask a navigation tool and an LLM the same question (Fig.~\ref{fig:overview}). We first collected data from Google Maps in two ways. An ETL (extract, transform, load) pipeline turned the city's official lists of major roads into traffic readings taken every two hours for a week, which show when and where traffic is heavy. Google's predicted travel times for the benchmark trips then serve as the reference answers. The benchmark itself asks Google Maps, Gemini and ChatGPT about 72 trips between named landmarks, each at four times on every day of a week.
+Answering these needs reliable reference data and a fair way to ask a navigation tool and an LLM the same question (Fig.~\ref{fig:overview}). An ETL (extract, transform, load) pipeline turned the city's official lists of major roads into traffic readings taken every two hours for a week, which show when and where traffic is heavy. Google's predicted travel times for the benchmark trips then serve as the reference answers. The benchmark itself asks Google Maps, Gemini and ChatGPT about 72 trips between named landmarks, each at four times on every day of a week.
 
 Our contributions are:
 \begin{itemize}
@@ -110,7 +110,7 @@ Several studies ask what LLMs know about geography. Gurnee and Tegmark~\cite{gur
 
 Closer to our question, Roberts et al.~\cite{roberts2023} tested GPT-4 on geographic tasks that include route planning and compared some of its routes with those of Google Maps. Chen et al.~\cite{chen2024} asked GPT-4, Gemini and Mistral to plan real driving and walking routes from a university campus and found many errors in every scenario. MapEval~\cite{dihan2025} scores models on 700 map-based multiple-choice questions across 180 cities; no model passed 67\,\% accuracy, and distances and routes were among the weakest areas. Guo et al.~\cite{guo2026} trained an LLM on 13 million transit route records from four Chinese cities to plan routes without a map. To our knowledge, none of these compares an LLM's distances and travel times with a navigation tool's predictions across the hours and days of a week in one city, which is what our benchmark does.
 
-Two further studies shape our design. Akbar et al.~\cite{akbar2023} measured travel speed and congestion in 180 Indian cities from trips simulated with a web mapping service, which supports using such a service as a source of city traffic data. Sclar et al.~\cite{sclar2024} showed that small changes in prompt format can change LLM results considerably and recommended reporting results across formats; our comparison of prompt wordings and answer formats follows this advice.
+Akbar et al.~\cite{akbar2023} measured speed and congestion in 180 Indian cities from trips simulated with a web mapping service, as we use Google Maps for traffic data. Sclar et al.~\cite{sclar2024} showed that small changes in prompt format can change LLM results considerably; our comparison of prompt wordings and answer formats follows their advice to report results across formats.
 
 % ======================================================================
 \section{Google Maps Data}\label{sec:gmaps}
@@ -122,8 +122,8 @@ The city's municipal body, the Bruhat Bengaluru Mahanagara Palike (BBMP), lists 
 
 \begin{figure}[!htb]
 \centering
-\includegraphics[height=3.1cm]{figures/fig_routes_arterial.jpg}\hfill
-\includegraphics[height=3.1cm]{figures/fig_routes_subarterial.jpg}
+\includegraphics[height=2.9cm]{figures/fig_routes_arterial.jpg}\hfill
+\includegraphics[height=2.9cm]{figures/fig_routes_subarterial.jpg}
 \caption{Arterial (left) and sub-arterial (right) routes drawn in QGIS as shortest paths on OpenStreetMap, before overlapping routes were removed. Base map \copyright{} OpenStreetMap contributors.}
 \label{fig:route_geometries}
 \end{figure}
@@ -142,9 +142,9 @@ To compare legs of different length, we divide each reading by the median travel
 \label{fig:traffic_by_hour}
 \end{figure}
 
-Roads are fastest between 02:00 and 04:00, at about 0.75 of their usual time. Travel time rises through the morning without a sharp peak, stays 10--18\,\% above usual from 10:00 to 16:00 and peaks at 18:00, about 28\,\% above usual (Fig.~\ref{fig:traffic_by_hour}a). For the median leg, the time of day explains 87\,\% of its variation. Legs whose slowest query time is much slower than their fastest, a large \emph{daily swing}, also vary more around their daily pattern (rank correlation 0.55, Fig.~\ref{fig:leg_variation}b). So the busiest legs are somewhat less predictable, but most of what looks like unpredictability is the daily cycle.
+Roads are fastest between 02:00 and 04:00, at about 0.75 of their usual time. Travel time rises through the morning without a sharp peak, stays 10--18\,\% above usual from 10:00 to 16:00 and peaks at 18:00, about 28\,\% above usual (Fig.~\ref{fig:traffic_by_hour}a). For the median leg, the time of day explains 87\,\% of its variation, so most of what looks like unpredictability is the daily cycle; legs with a larger daily swing are only somewhat less predictable (rank correlation 0.55).
 
-We call the fifth of legs with the highest variation, 0.28 or more (113 legs), the \emph{variable legs}. They lie mainly in the centre and along a few radial corridors (Fig.~\ref{fig:legs_map}), and the benchmark uses them to tag its routes (Section~\ref{sec:routes}). At the other end, 21 short legs (4\,\%) reported exactly the static duration in every reading, the bar at zero in Fig.~\ref{fig:leg_variation}a. One possibility is that Google has too little live data for these roads, but we could not check this. Finally, the median speed at each time of day gives the simple baseline of Section~\ref{sec:baseline}.
+We call the fifth of legs with the highest variation, 0.28 or more (113 legs), the \emph{variable legs}. They lie mainly in the centre and along a few radial corridors (Fig.~\ref{fig:legs_map}), and the benchmark uses them to tag its routes (Section~\ref{sec:routes}). At the other end, 21 short legs (4\,\%) reported exactly the static duration in every reading. One possibility is that Google has too little live data for these roads, but we could not check this. Finally, the median speed at each time of day gives the simple baseline of Section~\ref{sec:baseline}.
 
 \begin{figure}[!htb]
 \centering
@@ -153,12 +153,7 @@ We call the fifth of legs with the highest variation, 0.28 or more (113 legs), t
 \label{fig:legs_map}
 \end{figure}
 
-\begin{figure}[!htb]
-\centering
-\includegraphics[width=\linewidth]{figures/fig_leg_variation.pdf}
-\caption{(a) Variation of the 564 legs; red: the variable legs. (b) Each leg's daily swing against the variation left over after removing the daily pattern.}
-\label{fig:leg_variation}
-\end{figure}
+% Fig. of leg variation (figures/fig_leg_variation.pdf) left out for space.
 
 % The animation figure was removed to shorten this section. To restore it, add:
 % \begin{figure}[!htb]\centering\includegraphics[width=0.8\linewidth]{figures/fig_animation_frames.pdf}
@@ -203,9 +198,9 @@ Setting & Google Maps & Gemini & ChatGPT \\
 \hline
 Place given as & Coordinates & Landmark name & Landmark name \\
 Day and time & Departure time & Weekday and clock time & Weekday and clock time \\
-Mode or model & Traffic-aware, most thorough & gemini-3.8-flash & To be confirmed \\
-Reasoning & -- & Lowest (low) & Lowest offered \\
-Temperature & -- & 1.0 & 1.0 if accepted \\
+Mode or model & Traffic-aware, most thorough & gemini-3.8-flash & gpt-5.4-mini (2026-03-17) \\
+Reasoning & -- & Lowest (low) & Lowest (none) \\
+Temperature & -- & 1.0 & 1.0 \\
 Tools & -- & None & None \\
 Queries & 2,016 & 2,016 & 2,016 \\
 Repeat answers & -- & 10 routes, 2 extra & 10 routes, 2 extra \\
@@ -245,7 +240,7 @@ Suggested route (each road with name, distance in km and time in min); estimated
 \end{table}
 
 \subsection{Earlier Prompt}
-An earlier run in October 2026 asked Gemini the same 2,016 queries with the project's first prompt. That prompt pointed the model towards rush hour (Table~\ref{tab:prompt_wording}), so its answers are used only to study the effect of prompt wording. The neutral prompt also asks for road-by-road times. To separate the effect of the wording from the effect of this new format, Gemini answered the queries of the ten repeat routes once more with the neutral wording and a plain list of road names.
+An earlier run in October 2026 asked Gemini the same 2,016 queries with the project's first prompt. That prompt pointed the model towards rush hour (Table~\ref{tab:prompt_wording}), so its answers are used only to study the effect of prompt wording. The neutral prompt also asks for road-by-road times. To separate the effect of the wording from the effect of this new format, both LLMs answered the queries of the ten repeat routes once more with the neutral wording and a plain list of road names. ChatGPT was not run with the earlier prompt.
 
 \begin{table}[!htb]
 \caption{Earlier and Neutral Prompt Wording}
@@ -265,12 +260,12 @@ Time field & \ldots{} including expected traffic & \ldots{} at the given day and
 \end{table}
 
 \subsection{Landmark Check and Road Names}
-To separate ``does not know the place'' from ``routes badly'', each LLM was also asked, in a separate request, where each landmark is (locality and coordinates). A landmark counts as \emph{misplaced} if the LLM's point is more than 2~km from Google's and the locality does not match.
+To separate ``does not know the place'' from ``routes badly'', each LLM was also asked, in a separate request, where each landmark is (locality and coordinates). A landmark counts as \emph{misplaced} if the LLM's point is more than 2~km from Google's and the locality does not match. Gemini's check, run in October, is reused because its prompt has no traffic wording.
 
 To compare roads, Google's route line was \emph{map-matched} to OpenStreetMap: a point every 20~m was matched to the nearest road within 25~m, and a road name was kept if it held for at least three points. Road names from Google's turn-by-turn instructions were added. LLM road names were cleaned (case, abbreviations such as ``Rd'' and ``ORR'') and counted as the same road as a reference name when their token-set similarity score, a fuzzy string match that ignores word order, was at least 85 out of 100. The \emph{reference list} joins OpenStreetMap names, Google's instruction names and the BBMP road list.
 
 \subsection{Measures and Statistics}
-Table~\ref{tab:measures} defines the measures. Our main error measure is the \emph{typical miss}, the median percentage error: an LLM value 25\,\% above or 25\,\% below Google's both count as a 25\,\% miss. The 28 queries of one route are not independent, so 95\,\% confidence intervals come from resampling whole routes 2,000 times (a route-level bootstrap), and group differences are tested by shuffling group labels 5,000 times on per-route values (a permutation test). Gemini and ChatGPT are compared on the same queries. Because route length differs between road types, road-type comparisons are repeated on routes of 5~km or more.
+Table~\ref{tab:measures} defines the measures. Our main error measure is the \emph{typical miss}, the median percentage error: an LLM value 25\,\% above or 25\,\% below Google's both count as a 25\,\% miss. The 28 queries of one route are not independent, so 95\,\% confidence intervals come from resampling whole routes 2,000 times (a route-level bootstrap), and group differences are tested by shuffling group labels 5,000 times on per-route values (a permutation test). The two LLMs are compared on the same routes with a sign-flip permutation test on each route's difference in typical miss (10,000 shuffles). Because route length differs between road types, road-type comparisons are repeated on routes of 5~km or more.
 
 \begin{table}[!htb]
 \caption{Benchmark Measures}
@@ -298,12 +293,10 @@ As a rule of thumb, we estimate distance as the straight-line distance times 1.2
 
 % ======================================================================
 \section{Results}\label{sec:results}
-% ChatGPT has not been run yet. When its answers exist, add a ChatGPT column to each table
-% and a ChatGPT series to each figure, and rename the subsections back to "the LLMs".
-This section answers the five questions of Section~I in turn, after a look at Google's reference answers. ChatGPT has not been run yet, so the results are for Gemini; Google Maps is the reference throughout.
+This section answers the five questions of Section~I in turn, after a look at Google's reference answers. Google Maps is the reference throughout, and Gemini and ChatGPT answer exactly the same queries.
 
 \subsection{Google Maps Reference}
-All 2,016 Google requests succeeded, and every start and end point lay within the allowed distance of its landmark. Table~\ref{tab:route_groups} shows the 72 routes by length and road type. Google's predicted traffic follows a clear weekly pattern (Fig.~\ref{fig:google_heatmap}). On weekdays, the median route is 19\,\% above its fastest time at 08:00, 35\,\% at 14:00, 63\,\% at 18:00 and 5\,\% at 23:00. Weekends are lighter in the morning and evening, and on Sunday morning routes are almost at their fastest. Google used more than one path during the week on 37 of the 72 routes.
+All 2,016 Google requests succeeded, and every start and end point lay within the allowed distance of its landmark. By Google's paths, 44 routes run mainly on arterial roads, 16 are mixed and 12 run mainly on smaller roads, and 17, 27 and 28 fall in the three length bands. Google's predicted traffic follows a clear weekly pattern (Fig.~\ref{fig:google_heatmap}). On weekdays, the median route is 19\,\% above its fastest time at 08:00, 35\,\% at 14:00, 63\,\% at 18:00 and 5\,\% at 23:00. Weekends are lighter in the morning and evening, and on Sunday morning routes are almost at their fastest. Google used more than one path during the week on 37 of the 72 routes.
 
 \begin{figure}[!htb]
 \centering
@@ -312,42 +305,28 @@ All 2,016 Google requests succeeded, and every start and end point lay within th
 \label{fig:google_heatmap}
 \end{figure}
 
-\begin{table}[!htb]
-\caption{Routes by Length and Road Type}
-\label{tab:route_groups}
-\centering
-\begin{tabular}{lcccc}
-\hline
-Route length & Arterial & Mixed & Sub-arterial & Total \\
-\hline
-1--5~km & 7 & 4 & 6 & 17 \\
-5--12~km & 16 & 7 & 4 & 27 \\
-12~km or more & 21 & 5 & 2 & 28 \\
-Total & 44 & 16 & 12 & 72 \\
-\hline
-\end{tabular}
-\end{table}
 
-\subsection{Gemini against Google Maps}
+\subsection{The LLMs against Google Maps}
 
 \subsubsection{Places and Road Names}
-Gemini placed all 64 landmarks within 2~km of Google's point, with a median distance of 0.25~km, so none counts as misplaced (Fig.~\ref{fig:landmark_error}, Table~\ref{tab:checks}). The landmark check was run once, in October; its prompt contains no traffic wording. Across all answers Gemini named 2,069 distinct roads, and 92\,\% of them match a reference name; within one answer, 96\,\% of the named roads match on average. Matching is lower on routes along smaller roads (91\,\% against 97\,\% on main roads).
+Both LLMs know where most landmarks are, Gemini more precisely (Fig.~\ref{fig:landmark_error}, Table~\ref{tab:checks}). Gemini placed all 64 within 2~km of Google's point, with a median distance of 0.25~km. ChatGPT's median distance is 0.65~km; it placed nine landmarks more than 2~km away, and one, Silk Institute Metro Station (6.0~km off, in the wrong locality), counts as misplaced, so one route starts at a misplaced landmark. Both name mostly real roads: 92\,\% of Gemini's 2,069 distinct road names and 82\,\% of ChatGPT's 2,111 match a reference name, and within one answer 96\,\% and 91\,\% do. Both match fewer names on routes along smaller roads.
 
 \begin{table}[!htb]
 \caption{Place, Road Name and Repeat Answer Checks}
 \label{tab:checks}
 \centering
-\begin{tabular}{L{5.2cm}c}
+\begin{tabular}{L{4.3cm}cc}
 \hline
-Measure & Gemini \\
+Measure & Gemini & ChatGPT \\
 \hline
-Landmarks misplaced & 0 of 64 \\
-Median landmark error & 0.25~km \\
-Distinct road names found in the reference list & 92\,\% \\
-Repeat spread, distance & 3.9\,\% \\
-Repeat spread, time & 5.8\,\% \\
-Same traffic level on repeat & 93\,\% \\
-Road-list overlap between repeats & 0.43 \\
+Landmarks misplaced & 0 of 64 & 1 of 64 \\
+Landmarks more than 2~km off & 0 & 9 \\
+Median landmark error & 0.25~km & 0.65~km \\
+Distinct road names found in the reference list & 92\,\% & 82\,\% \\
+Repeat spread, distance & 3.9\,\% & 11.6\,\% \\
+Repeat spread, time & 5.8\,\% & 11.7\,\% \\
+Same traffic level on repeat & 93\,\% & 91\,\% \\
+Road-list overlap between repeats & 0.43 & 0.36 \\
 \hline
 \end{tabular}
 \end{table}
@@ -355,12 +334,12 @@ Road-list overlap between repeats & 0.43 \\
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_landmark_error.pdf}
-\caption{Distance between Gemini's point and Google's point for each of the 64 landmarks. The dashed line marks the 2~km limit of the landmark check.}
+\caption{Distance between each LLM's point and Google's point for the 64 landmarks. The dashed line marks the 2~km limit of the landmark check.}
 \label{fig:landmark_error}
 \end{figure}
 
 \subsubsection{Distance and Time}
-Table~\ref{tab:accuracy} summarises accuracy over all 2,016 queries. Gemini's distances are slightly long (median ratio 1.08, longer than Google's in 67\,\% of queries), with a typical miss of 14\,\%. Its times have a median ratio of 1.01 but a typical miss of 23\,\%, and only 23\,\% of times fall within 10\,\% of Google's. In absolute terms the typical miss is 1.3~km and 6.1~minutes. In Fig.~\ref{fig:scatter}, distances follow the line of equal values, while times split by the time of day: rush-hour answers lie above the line and night answers below it. Table~\ref{tab:worked_example} shows one route. At 08:00 Gemini's time is close to Google's, but at 23:00 it gives 9 minutes against Google's 19, and it names only one of the main roads on Google's path.
+Table~\ref{tab:accuracy} summarises accuracy over all 2,016 queries. Gemini's distances are slightly long (median ratio 1.08) with a typical miss of 14\,\%, and its times have a median ratio of 1.01 but a typical miss of 23\,\%. ChatGPT overestimates both: its distances are 25\,\% and its times 27\,\% longer than Google's in the median query, with typical misses of 31\,\% and 32\,\%, and three quarters of its answers are longer and slower than Google's. In absolute terms the typical miss is 1.3~km and 6.1~minutes for Gemini, and 2.7~km and 8.8~minutes for ChatGPT. Compared route by route, Gemini is closer than ChatGPT on 75\,\% of routes for distance and 71\,\% for time ($p<0.001$). In Fig.~\ref{fig:scatter}, Gemini's distances follow the line of equal values while ChatGPT's lie above it, and the times of both split by the time of day. For example, from Tin Factory Junction to Hennur Cross on Tuesday at 08:00 (Fig.~\ref{fig:paths}a), Google predicts 8.1~km and 21~minutes, Gemini answers 7.5~km and 24~minutes, and ChatGPT 8.5~km and 36~minutes. At 23:00 Google predicts 19~minutes, Gemini 9 and ChatGPT 23, and ChatGPT's distance grows to 11.1~km.
 
 \begin{table}[!htb]
 \caption{Distance and Time Accuracy}
@@ -374,6 +353,7 @@ Table~\ref{tab:accuracy} summarises accuracy over all 2,016 queries. Gemini's di
 Source & Ratio & Miss & ${\le}10\,\%$ & Ratio & Miss & ${\le}10\,\%$ \\
 \hline
 Gemini & 1.08 & 14\,\% & 35\,\% & 1.01 & 23\,\% & 23\,\% \\
+ChatGPT & 1.25 & 31\,\% & 19\,\% & 1.27 & 32\,\% & 17\,\% \\
 Simple formula & 0.92 & 10\,\% & -- & 0.90 & 16\,\% & -- \\
 \hline
 \multicolumn{7}{p{7.6cm}}{\footnotesize Ratio: median of LLM / Google. ${\le}10\,\%$: share of queries within 10\,\% of Google.}
@@ -383,35 +363,15 @@ Simple formula & 0.92 & 10\,\% & -- & 0.90 & 16\,\% & -- \\
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_scatter.pdf}
-\caption{Gemini against Google Maps for all 2,016 queries, on log axes: (a) distance, (b) travel time by query time. The dotted line marks equal values.}
+\caption{Gemini (top) and ChatGPT (bottom) against Google Maps for all 2,016 queries, on log axes: distance (left) and travel time by query time (right). The dotted line marks equal values.}
 \label{fig:scatter}
 \end{figure}
 
-\begin{table}[!htb]
-\caption{Worked Example: Tin Factory Junction to Hennur Cross, Tuesday 1 December}
-\label{tab:worked_example}
-\centering
-\setlength{\tabcolsep}{3pt}
-\footnotesize
-\begin{tabular}{L{1.15cm}ccL{1.3cm}L{3.3cm}}
-\hline
-Source & km & min & Traffic & Main roads named \\
-\hline
-\multicolumn{5}{l}{\textit{08:00}} \\
-Google & 8.1 & 21.3 & +45\,\% & Outer Ring Road, NH 44, Hennur Bagalur Main Rd \\
-Gemini & 7.5 & 24.0 & Moderate & Old Madras Road, Outer Ring Road \\
-\multicolumn{5}{l}{\textit{23:00}} \\
-Google & 8.1 & 18.8 & +28\,\% & Same as at 08:00 \\
-Gemini & 6.4 & 9.0 & Light & Outer Ring Road, Hennur Bagalur Main Road \\
-\hline
-\multicolumn{5}{l}{\footnotesize Google's traffic is its traffic index, the time above the route's fastest.}
-\end{tabular}
-\end{table}
 
 \subsubsection{Time of Day}
-Table~\ref{tab:time_ratio} gives Gemini's time ratio to Google at each query time. On weekdays Gemini is 29\,\% too slow at 08:00, 32\,\% too slow at 18:00 and 25\,\% too fast at 23:00; only the 14:00 answers are close. Fig.~\ref{fig:day_shape} shows why: relative to the same trip at weekday 23:00, Gemini makes trips 2.03 times longer at 08:00 and 2.75 times longer at 18:00, while Google predicts 1.13 and 1.52. Each route's rush-hour multiplier is larger for Gemini than for Google, on all 72 routes (Fig.~\ref{fig:multiplier}); the medians are 2.40 and 1.34, and the two hardly agree on which routes are worst (rank correlation 0.11). The gap is largest for short trips (1--5~km: 2.61 against 1.24). One route reverses Google's pattern: from Yeshwanthpur Metro to Peenya Metro, Google predicts 21 minutes at weekday 23:00 and 16 at 08:00, while Gemini gives 8 and 15.
+Table~\ref{tab:time_ratio} gives each LLM's time ratio to Google at each query time. The two err in different ways. On weekdays Gemini is 29\,\% too slow at 08:00 and 32\,\% at 18:00 but 25\,\% too fast at 23:00, so its errors partly cancel. ChatGPT is too slow at every hour, most at 08:00 (59\,\%) and least at 23:00 (7\,\%). Relative to the same trip at weekday 23:00 (Fig.~\ref{fig:day_shape}), Gemini makes trips 2.03 times longer at 08:00 and 2.75 times longer at 18:00, ChatGPT 1.73 and 1.91 times, and Google only 1.13 and 1.52 times. Each route's rush-hour multiplier is larger than Google's for Gemini on all 72 routes and for ChatGPT on 71 (Fig.~\ref{fig:multiplier}); the medians are 2.40, 1.84 and 1.34 for Google. Neither LLM follows Google's differences between routes (rank correlations of 0.11 and 0.09 across routes). Gemini's multiplier is largest for short trips (2.61 for 1--5~km), while ChatGPT's is about 1.8 at every length. One route reverses Google's pattern: from Yeshwanthpur Metro to Peenya Metro, Google predicts 21 minutes at weekday 23:00 and 16 at 08:00, while Gemini gives 8 and 15 and ChatGPT 11 and 21.
 
-Gemini's traffic labels follow the clock (Fig.~\ref{fig:traffic_levels}). On weekdays, every 14:00 answer is ``moderate'', every 18:00 answer ``heavy'' and every 23:00 answer ``light''; at 08:00, 56\,\% are ``heavy''. Even so, the labels rise and fall with Google's traffic index (rank correlation 0.73), and within a route the order of Gemini's 28 times agrees with Google's (median rank correlation 0.81).
+Both LLMs' traffic labels follow the clock (Fig.~\ref{fig:traffic_levels}): on weekdays almost every 14:00 answer is ``moderate'', 18:00 ``heavy'' and 23:00 ``light'', and at 08:00, 56\,\% of Gemini's answers and 80\,\% of ChatGPT's are ``heavy''. Even so, the labels rise and fall with Google's traffic index (rank correlations 0.73 and 0.63), and within a route the order of the 28 times agrees with Google's (median rank correlations 0.81 and 0.62).
 
 \begin{table}[!htb]
 \caption{Time Ratio to Google by Time of Day}
@@ -423,6 +383,8 @@ Source & 08:00 & 14:00 & 18:00 & 23:00 \\
 \hline
 Gemini, weekday & 1.29 & 0.98 & 1.32 & 0.75 \\
 Gemini, weekend & 0.92 & 0.92 & 1.13 & 0.72 \\
+ChatGPT, weekday & 1.59 & 1.20 & 1.38 & 1.07 \\
+ChatGPT, weekend & 1.43 & 1.16 & 1.28 & 1.06 \\
 Simple formula, weekday & 0.90 & 0.90 & 0.86 & 0.89 \\
 \hline
 \end{tabular}
@@ -431,65 +393,66 @@ Simple formula, weekday & 0.90 & 0.90 & 0.86 & 0.89 \\
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_day_shape.pdf}
-\caption{Shape of the day: median travel time at each query time divided by the same route at weekday 23:00, for Google and Gemini.}
+\caption{Shape of the day: median travel time at each query time divided by the same route at weekday 23:00, for Google, Gemini and ChatGPT.}
 \label{fig:day_shape}
 \end{figure}
 
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_multiplier.pdf}
-\caption{Rush-hour multiplier of each route: Gemini against Google, by route length. Every route lies above the dotted line of equal values.}
+\caption{Rush-hour multiplier of each route: each LLM against Google. All Gemini routes and all but one ChatGPT route lie above the dotted line of equal values.}
 \label{fig:multiplier}
 \end{figure}
 
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_traffic_levels.pdf}
-\caption{Traffic levels reported by Gemini at each weekday query time, with Google's median traffic index above each bar.}
+\caption{Traffic levels reported by Gemini (G) and ChatGPT (C) at each weekday query time, with Google's median traffic index above each pair of bars.}
 \label{fig:traffic_levels}
 \end{figure}
 
 \subsubsection{Road Choice}
-Of the roads Gemini names, 60\,\% are on Google's route (precision), but it names only 20\,\% of Google's roads (recall), and the overlap of the two lists is 0.17 (Table~\ref{tab:road_overlap}). All three fall on routes along smaller roads. Gemini names a median of four roads per answer, while Google's route has a median of six. Road by road, 90\,\% of queries have at least one road that pairs with a Google sub-route; the 1.7 pairs per query cover a median of 37\,\% of Google's route. On these roads Gemini's distances and times are about 20\,\% too high, with a typical miss of 48\,\% for distance and 47\,\% for time, although its road values always add up to its own totals. The time-of-day pattern repeats at road level: the paired-road time ratio is 1.28 at 08:00, 1.13 at 14:00, 1.49 at 18:00 and 0.89 at 23:00.
+Of the roads Gemini names, 60\,\% are on Google's route (precision), but it names only 20\,\% of Google's roads (recall); for ChatGPT these are 45\,\% and 14\,\% (Table~\ref{tab:road_overlap}). Both fall on routes along smaller roads. Each LLM names a median of four roads per answer, while Google's route has a median of six. Road by road, 90\,\% of Gemini's answers and 73\,\% of ChatGPT's have at least one road that pairs with a Google sub-route, and the pairs cover a median of 37\,\% and 18\,\% of Google's route. On these roads the typical miss is far larger than for whole routes: 48\,\% for distance and 47\,\% for time for Gemini, and 76\,\% and 77\,\% for ChatGPT, whose road values are about 75\,\% too high. Yet both LLMs' road values add up to their own totals in almost every answer, so errors on single roads cancel in the sum.
 
-Fig.~\ref{fig:paths} draws two trips. On the first, Gemini names the Outer Ring Road, which carries most of Google's path, yet the overlap score is only 0.09 because Google's route lists many short named stretches; a low overlap can therefore hide a sensible route. On the second, Gemini gives the direct 1.2~km along Mahatma Gandhi Road, while Google's path loops north for 3.2~km, possibly because of one-way streets around Trinity Circle.
-
-\begin{figure}[!htb]
-\centering
-\includegraphics[width=\linewidth]{figures/fig_paths.pdf}
-\caption{Google's path and the roads Gemini named for two queries on Tuesday at 08:00. Gemini gives road names, not coordinates, so its roads are drawn as the OpenStreetMap roads near the trip whose names match (score of 85 or more). Map data \copyright{} OpenStreetMap contributors.}
-\label{fig:paths}
-\end{figure}
+Fig.~\ref{fig:paths} draws two trips. On the first, both LLMs name the Outer Ring Road, which carries most of Google's path, yet Gemini's overlap score is only 0.09 because Google's route lists many short named stretches; a low overlap can therefore hide a sensible route. On the second, both give the direct 1.2~km along Mahatma Gandhi Road, while Google's path loops north for 3.2~km, possibly because of one-way streets around Trinity Circle.
 
 \begin{table}[!htb]
 \caption{Road Overlap with Google by Road Type}
 \label{tab:road_overlap}
 \centering
-\begin{tabular}{lccc}
+\setlength{\tabcolsep}{2.5pt}
+\footnotesize
+\begin{tabular}{lcccccc}
 \hline
-Road type & Overlap & Recall & Precision \\
+ & \multicolumn{3}{c}{Gemini} & \multicolumn{3}{c}{ChatGPT} \\
+\cline{2-4}\cline{5-7}
+Road type & Overlap & Recall & Precision & Overlap & Recall & Precision \\
 \hline
-Arterial & 0.18 & 0.21 & 0.64 \\
-Mixed & 0.19 & 0.21 & 0.66 \\
-Sub-arterial & 0.11 & 0.14 & 0.39 \\
-All routes & 0.17 & 0.20 & 0.60 \\
+Arterial & 0.18 & 0.21 & 0.64 & 0.14 & 0.16 & 0.50 \\
+Mixed & 0.19 & 0.21 & 0.66 & 0.11 & 0.13 & 0.44 \\
+Sub-arterial & 0.11 & 0.14 & 0.39 & 0.06 & 0.08 & 0.24 \\
+All routes & 0.17 & 0.20 & 0.60 & 0.12 & 0.14 & 0.45 \\
 \hline
 \end{tabular}
 \end{table}
 
-\subsubsection{Repeat Answers}
-Asked three times, the 280 queries of the ten repeat routes vary by 3.9\,\% in distance and 5.8\,\% in time, and keep the same traffic level in 93\,\% of cases (Table~\ref{tab:checks}), so Gemini's errors are mostly repeated, not random.
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_paths.pdf}
+\caption{Google's path and the roads each LLM named for two queries on Tuesday at 08:00. The LLMs give road names, not coordinates, so their roads are drawn as the OpenStreetMap roads near the trip whose names match (score of 85 or more). Map data \copyright{} OpenStreetMap contributors.}
+\label{fig:paths}
+\end{figure}
 
-\subsubsection{Simple Formula}
-The simple formula misses Google by 16\,\% in time and 10\,\% in distance (Table~\ref{tab:accuracy}), and its times are about 10\,\% too fast at every time of day. Gemini beats it on 43\,\% of queries for time and 46\,\% for distance. Only at 14:00 is Gemini better, with a typical time miss of 14\,\% against 16\,\%, winning on 59\,\% of queries; at the other three times it wins on 32 to 41\,\%.
+\subsubsection{Repeat Answers and the Simple Formula}
+Asked three times, the 280 queries of the ten repeat routes vary by 3.9\,\% in distance and 5.8\,\% in time for Gemini, and twice as much for ChatGPT (11.6\,\% and 11.7\,\%), while the traffic level stays the same in over 90\,\% of cases for both (Table~\ref{tab:checks}). The simple formula misses Google by 16\,\% in time and 10\,\% in distance (Table~\ref{tab:accuracy}), and its times are about 10\,\% too fast at every hour. Gemini beats it on 43\,\% of queries for time and 46\,\% for distance, ChatGPT on 35\,\% and 29\,\%. Gemini is better only at 14:00, winning on 59\,\% of queries; ChatGPT comes closest at 23:00, winning on 43\,\%.
 
-\subsection{Where Gemini Does Worst}
-Table~\ref{tab:group_tests} compares route groups using each route's typical miss, and Fig.~\ref{fig:where_worst} shows the main ones. Length matters most: short routes have about one and a half times the time miss and nearly three times the distance miss of long routes. Routes along smaller roads look worse on both measures, but half of them are short. On routes of 5~km or more, smaller roads still have twice the distance miss, but the same time miss. Exposure to the variable legs makes no difference. Table~\ref{tab:outliers} lists the routes with the largest misses and the closest one.
+\subsection{Where the LLMs Do Worst}
+Table~\ref{tab:group_tests} compares route groups using each route's typical miss, and Fig.~\ref{fig:where_worst} shows the effect of length. Length matters most for both LLMs: on short routes the time miss is about one and a half to two times that on long routes, and ChatGPT's distance overestimate is largest there (median ratio 1.44 for 1--5~km). For Gemini, routes along smaller roads look worse, but half of them are short; on routes of 5~km or more, smaller roads still have twice the distance miss but the same time miss. For ChatGPT, no road-type difference is clear. Exposure to the variable legs makes no difference for either. Table~\ref{tab:outliers} lists the routes with the largest misses. Possible reasons, none of them tested, are the reputation of the Hebbal area for traffic, one-way streets that lengthen Google's path at Trinity Circle, and heavy goods traffic at night near Peenya.
 
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_where_worst.pdf}
-\caption{Gemini's typical miss (median percentage error per route) by route length (a), and on main and smaller roads for routes of 5~km or more (b).}
+\caption{Typical miss (median percentage error per route) of each LLM by route length: time (a) and distance (b).}
 \label{fig:where_worst}
 \end{figure}
 
@@ -497,22 +460,24 @@ Table~\ref{tab:group_tests} compares route groups using each route's typical mis
 \caption{Comparisons between Route Groups (Typical Miss per Route)}
 \label{tab:group_tests}
 \centering
-\setlength{\tabcolsep}{3pt}
+\setlength{\tabcolsep}{2.5pt}
 \footnotesize
-\begin{tabular}{L{3.5cm}lccc}
+\begin{tabular}{L{2.2cm}lcccccc}
 \hline
-Groups A and B & Measure & A & B & $p$ \\
+ & & \multicolumn{3}{c}{Gemini} & \multicolumn{3}{c}{ChatGPT} \\
+\cline{3-5}\cline{6-8}
+Groups A and B & & A & B & $p$ & A & B & $p$ \\
 \hline
-Short vs long (17, 28) & Time & 33\,\% & 21\,\% & 0.0002 \\
- & Distance & 31\,\% & 11\,\% & 0.0002 \\
-Main vs smaller (44, 12) & Time & 22\,\% & 26\,\% & 0.05 \\
- & Distance & 12\,\% & 31\,\% & 0.0008 \\
-Same, 5~km+ (37, 6) & Time & 21\,\% & 22\,\% & 0.59 \\
- & Distance & 11\,\% & 23\,\% & 0.006 \\
-High vs low exposure (49, 23) & Time & 23\,\% & 22\,\% & 1.0 \\
- & Distance & 13\,\% & 17\,\% & 0.19 \\
+Short vs long & Time & 33\,\% & 21\,\% & 0.0002 & 46\,\% & 24\,\% & 0.001 \\
+ & Dist. & 31\,\% & 11\,\% & 0.0002 & 45\,\% & 25\,\% & 0.06 \\
+Main vs smaller & Time & 22\,\% & 26\,\% & 0.05 & 26\,\% & 31\,\% & 0.45 \\
+ & Dist. & 12\,\% & 31\,\% & 0.0008 & 25\,\% & 35\,\% & 0.24 \\
+Same, 5~km+ & Time & 21\,\% & 22\,\% & 0.59 & 25\,\% & 31\,\% & 0.43 \\
+ & Dist. & 11\,\% & 23\,\% & 0.006 & 24\,\% & 32\,\% & 0.38 \\
+Exposure & Time & 23\,\% & 22\,\% & 1.0 & 30\,\% & 38\,\% & 0.52 \\
+ & Dist. & 13\,\% & 17\,\% & 0.19 & 33\,\% & 28\,\% & 0.57 \\
 \hline
-\multicolumn{5}{p{7.4cm}}{\footnotesize Short: 1--5~km; long: 12~km or more. Number of routes in brackets. $p$: permutation test, 5,000 shuffles.}
+\multicolumn{8}{p{7.9cm}}{\footnotesize Routes: short (1--5~km) 17, long (12~km+) 28; main 44, smaller 12 (37 and 6 at 5~km+); high exposure 49, low 23. $p$: permutation test, 5,000 shuffles.}
 \end{tabular}
 \end{table}
 
@@ -522,98 +487,87 @@ High vs low exposure (49, 23) & Time & 23\,\% & 22\,\% & 1.0 \\
 \centering
 \setlength{\tabcolsep}{3pt}
 \footnotesize
-\begin{tabular}{L{2.4cm}C{1.05cm}C{1.05cm}L{2.6cm}}
+\begin{tabular}{L{3.0cm}C{1.4cm}C{1.4cm}C{1.4cm}}
 \hline
-Route & Google & Gemini & Possible reason \\
+Route & Google & Gemini & ChatGPT \\
 \hline
-Esteem Mall Hebbal to Manyata Tech Park & 4.0~km, 9~min & 5.5~km, 16~min & Reputation of the Hebbal area for traffic \\
-Trinity Circle to MG Road Metro & 3.2~km, 12~min & 1.2~km, 5~min & One-way streets lengthen Google's path \\
-KR Puram Railway Station to Phoenix Marketcity & 2.7~km, 9~min & 4.2~km, 14~min & Gemini takes a longer path; unclear \\
-Yeshwanthpur Metro to Peenya Metro, weekday 23:00 & 21~min & 8~min & Heavy goods traffic at night \\
-\textit{Closest:} Shivajinagar Bus Station to Mekhri Circle & 5.1~km, 15~min & 5.2~km, 17~min & -- \\
+Esteem Mall Hebbal to Manyata Tech Park & 4.0~km, 9~min & 5.5~km, 16~min & 6.0~km, 19~min \\
+Trinity Circle to MG Road Metro & 3.2~km, 12~min & 1.2~km, 5~min & 1.4~km, 6~min \\
+KR Puram Railway Station to Phoenix Marketcity & 2.7~km, 9~min & 4.2~km, 14~min & 7.0~km, 23~min \\
+Yeshwanthpur Metro to Peenya Metro, weekday 23:00 & 21~min & 8~min & 11~min \\
+\textit{Closest for Gemini:} Shivajinagar Bus Station to Mekhri Circle & 5.1~km, 15~min & 5.2~km, 17~min & 4.8~km, 20~min \\
 \hline
 \end{tabular}
 \end{table}
 
 \subsection{Effect of Prompt Wording}
-Over all 72 routes, the earlier prompt made Gemini call 92\,\% of weekday 08:00 queries ``heavy'', against 56\,\% with the neutral prompt, and gave a typical 08:00 time of 45 instead of 40~minutes. For the same query, the neutral answer is a median of 0.91 times the earlier one. Distances hardly change (11.5 against 11.2~km). Table~\ref{tab:prompt_effect} separates wording from answer format on the ten repeat routes. Changing only the wording lowers the 08:00 time from 45 to 39~minutes and the share of ``heavy'' from 98\,\% to 60\,\%, but leaves the rush-hour multiplier near 2 and every 18:00 answer ``heavy''. Asking for road-by-road times then raises the multiplier from 1.96 to 2.37 and shortens night trips (Fig.~\ref{fig:prompt_effect}). Google's multiplier for these routes is 1.32.
+Over all 72 routes, the earlier prompt made Gemini call 92\,\% of weekday 08:00 queries ``heavy'', against 56\,\% with the neutral prompt, and gave a typical 08:00 time of 45 instead of 40~minutes; distances hardly changed. ChatGPT has no answers to the earlier prompt. Table~\ref{tab:prompt_effect} separates wording from answer format on the ten repeat routes. For Gemini, changing only the wording lowers the 08:00 time from 45 to 39~minutes and the share of ``heavy'' from 98\,\% to 60\,\%, but leaves the rush-hour multiplier near 2 and every 18:00 answer ``heavy''. Asking for road-by-road times then raises Gemini's multiplier from 1.96 to 2.37 and shortens its night trips. For ChatGPT, the road-by-road format raises times at every hour, by 5 to 11~minutes, and its median distance from 11.5 to 13.0~km; its whole-route answers are closer to Google's except at 23:00.
 
 \begin{table}[!htb]
-\caption{Gemini with Three Prompt Versions on the Ten Repeat Routes (Weekdays)}
+\caption{Prompt Versions on the Ten Repeat Routes (Weekdays)}
 \label{tab:prompt_effect}
 \centering
-\setlength{\tabcolsep}{3pt}
+\setlength{\tabcolsep}{2.5pt}
 \footnotesize
-\begin{tabular}{L{2.5cm}cccc}
+\begin{tabular}{L{2.0cm}cccccc}
 \hline
- & Earlier & \multicolumn{2}{c}{Neutral wording} & \\
-\cline{3-4}
-Measure & prompt & Whole & By road & Google \\
+ & \multicolumn{4}{c}{Typical time (min)} & Rush-hour & 08:00 \\
+\cline{2-5}
+Version & 08:00 & 14:00 & 18:00 & 23:00 & multiplier & ``heavy'' \\
 \hline
-08:00 time (min) & 45 & 39 & 39 & 30 \\
-14:00 time (min) & 35 & 35 & 32 & 35 \\
-18:00 time (min) & 55 & 50 & 53 & 39 \\
-23:00 time (min) & 22 & 22 & 20 & 29 \\
-Rush-hour multiplier & 2.07 & 1.96 & 2.37 & 1.32 \\
-08:00 ``heavy'' & 98\,\% & 60\,\% & 60\,\% & -- \\
-18:00 ``heavy'' & 100\,\% & 100\,\% & 100\,\% & -- \\
+Gemini, earlier & 45 & 35 & 55 & 22 & 2.07 & 98\,\% \\
+Gemini, whole & 39 & 35 & 50 & 22 & 1.96 & 60\,\% \\
+Gemini, by road & 39 & 32 & 53 & 20 & 2.37 & 60\,\% \\
+ChatGPT, whole & 40 & 35 & 45 & 25 & 1.60 & 86\,\% \\
+ChatGPT, by road & 51 & 41 & 56 & 31 & 1.79 & 82\,\% \\
+Google & 30 & 35 & 39 & 29 & 1.32 & -- \\
 \hline
+\multicolumn{7}{p{7.9cm}}{\footnotesize Earlier: the earlier prompt. Whole, by road: neutral wording with a whole-route or road-by-road answer.}
 \end{tabular}
 \end{table}
 
-\begin{figure}[!htb]
-\centering
-\includegraphics[width=\linewidth]{figures/fig_prompt_effect.pdf}
-\caption{Typical weekday travel time on the ten repeat routes for three prompt versions of Gemini, with Google.}
-\label{fig:prompt_effect}
-\end{figure}
+% The prompt-effect figure (figures/fig_prompt_effect.pdf) shows the same numbers as Table XIII; left out for space.
 
 % ======================================================================
 \section{Discussion and Limitations}\label{sec:discussion}
 
-The results show what Gemini gets right and wrong. This section asks what they suggest about its knowledge, how they compare with what we expected at the start of the project, what they mean for someone who uses an LLM to plan a trip, and where our conclusions stop.
+The results show what the two LLMs get right and wrong. This section asks what they suggest about the models' knowledge and our early expectations, what they mean for someone who uses an LLM to plan a trip, and where our conclusions stop.
 
-% ChatGPT results are not in yet. When they arrive, add one sentence per paragraph
-% on whether ChatGPT shows the same pattern, and rename the first subsection.
-\subsection{What Gemini Knows}
-Gemini knows the city's places and road names, but not which roads a driver would take: it places every landmark correctly and names real roads, yet names only a fifth of the roads on Google's route. Its distances are close. Its travel times look accurate on average only because two errors cancel: it is too slow in rush hour and too fast at night. It orders a route's times roughly as Google does, because both put 18:00 slowest and 23:00 fastest, but it adds about the same rush-hour penalty to every route, whether or not Google expects that route to be slow. In short, it knows the clock better than the road. Its repeat answers barely change, so these errors are systematic rather than random.
+\subsection{What the LLMs Know}
+Both LLMs know the city's places and road names, but not which roads a driver would take, and Gemini is the more precise of the two on every measure. Both know the clock better than the road: they add roughly the same rush-hour penalty to every route, whether or not Google expects that route to be slow. They differ in how they err. Gemini's distances are close, and its times are too slow in rush hour and too fast at night, so its average looks right. ChatGPT's distances and times are too high at almost every hour; one possibility is that it assumes a generally congested city, but our data cannot show why. Repeat answers change little for Gemini and twice as much for ChatGPT, so most errors of both are systematic rather than random.
 
-The largest gap is at 08:00. Google predicts weekday traffic at 08:00 only 13\,\% above night, and the city-wide traffic data (Section~\ref{sec:traffic_findings}) also shows no sharp morning peak. One possibility is that Bangalore's morning peak comes later than 08:00, so a model that treats 08:00 as rush hour is early; we did not ask at other morning times, so this remains untested. On the Yeshwanthpur to Peenya route, where Google predicts night to be slower than 08:00 in both weeks of its data, heavy goods traffic near the Peenya industrial area is one possible reason.
+Both overestimate 08:00 strongly, ChatGPT most of all. Google predicts weekday traffic at 08:00 only 13\,\% above night, and the city-wide traffic data (Section~\ref{sec:traffic_findings}) also shows no sharp morning peak. One possibility is that Bangalore's morning peak comes later than 08:00, so a model that treats 08:00 as rush hour is early; we did not ask at other morning times, so this remains untested. On the Yeshwanthpur to Peenya route, where Google predicts night to be slower than 08:00 in both weeks of its data, heavy goods traffic near the Peenya industrial area is one possible reason.
 
-The road-by-road answers show that a good total does not mean good parts: errors on single roads cancel in the sum. A possible reading is that Gemini starts from a sense of the whole trip and splits it over roads, rather than adding up roads it knows; our data cannot tell these apart. Short trips are hardest; one possibility is that an error of a few minutes or a kilometre weighs more on a short trip. Main roads help with distance but not with time, and the variable legs make no difference, so Gemini's time errors seem to come from its view of the clock rather than from particular roads.
+For both LLMs a good total does not mean good parts: errors on single roads cancel in the sum. A possible reading is that the models start from a sense of the whole trip and split it over roads, rather than adding up roads they know; our data cannot tell these apart. Short trips are hardest for both; one possibility is that an error of a few minutes or a kilometre weighs more on a short trip. Main roads help Gemini with distance but not with time, and neither LLM does worse on the variable legs, so their time errors seem to come from their view of the clock rather than from particular roads. Of what we expected at the start of the project, times were weaker than distances only for Gemini, main roads were easier only for Gemini's distances, and the effect of map context or an India-focused map service was not tested.
 
-Prompt wording explains only part of the rush-hour bias. The earlier wording mainly inflated 08:00, but with neutral wording rush hour is still about twice the night time, and asking for road-by-road times raised this ratio further. A study of LLM travel times should therefore report both the wording and the answer format.
+Prompt wording explains only part of the rush-hour bias. The earlier wording mainly inflated Gemini's 08:00 times, but with neutral wording rush hour is still about twice the night time. The answer format matters as much: asking for road-by-road times raised Gemini's rush-hour ratio and made all of ChatGPT's trips longer. A study of LLM travel times should therefore report both the wording and the answer format, which can affect two models differently.
 
-\subsection{Earlier Expectations}
-At the start of the project we expected travel times to be weaker than distances, and they were (typical miss 23\,\% against 14\,\%). We expected main roads to be easier than side roads; this held for distance but not for time (Table~\ref{tab:group_tests}). Routes through the variable legs were not harder, against our expectation. Whether map context or an India-focused map service would help was not tested.
-
-\subsection{Practical Meaning}
-For a traveller, Gemini gives a usable rough distance between well-known places more than 5~km apart. Its weekday travel times should be read as about 30\,\% too long at rush hour and 25\,\% too short at night, its road-by-road figures should not be trusted, and its ``heavy traffic'' label adds little beyond the time already in the question.
+For a traveller, Gemini gives a usable rough distance between well-known places more than 5~km apart, while ChatGPT's distances are typically a quarter too long. Gemini's weekday times should be read as about 30\,\% too long at rush hour and 25\,\% too short at night, and ChatGPT's as too long at almost every hour, most in the morning. Neither model's road-by-road figures nor its ``heavy traffic'' label adds much beyond the time already in the question.
 
 \subsection{Limitations}
 \emph{Reference.} Google's times are predictions for one week, not measured drives, so ``close to Google'' is not the same as ``close to the real trip''. The earlier prompt ran against a different Google week, but Gemini's questions contain no date and Google's pattern was almost the same in both weeks.
 
-\emph{Models and prompts.} Only Gemini has been tested so far, at one setting (lowest reasoning, temperature 1.0), and results may change with later model versions. The neutral prompt still asks the model to consider the time of day. The earlier and neutral prompts differ in several places at once; the format-control run separates the answer format from the wording, but not the individual wording changes from each other.
+\emph{Models and prompts.} Two LLMs were tested, each at its lowest reasoning setting and temperature 1.0, and results may change with later model versions. The neutral prompt still asks the model to consider the time of day. The earlier and neutral prompts differ in several places at once; the format-control run separates the answer format from the wording, but not the individual wording changes from each other, and only Gemini was run with the earlier prompt.
 
-\emph{Routes and roads.} Only 12 routes run mainly on smaller roads, and only six of them are 5~km or longer, so road-type results are indicative. Road matching depends on names: Google may call a road ``NH 44'' where others say ``Outer Ring Road'', so validity and overlap are lower bounds, and paired roads cover a median of 37\,\% of Google's route length.
+\emph{Routes and roads.} Only 12 routes run mainly on smaller roads, and only six of them are 5~km or longer, so road-type results are indicative. Road matching depends on names: Google may call a road ``NH 44'' where others say ``Outer Ring Road'', so validity and overlap are lower bounds, and paired roads cover a median of 37\,\% (Gemini) and 18\,\% (ChatGPT) of Google's route length. One route starts at a landmark that ChatGPT misplaced; it was kept.
 
-\emph{Traffic data.} The city-wide traffic data covers a short period, its readings are Google's estimates at the moment of each request, and its static duration is not an empty-road time. The simple formula's speeds come from this data, and the formula knows the exact coordinates, which the LLMs do not.
+\emph{Traffic data.} The city-wide traffic data covers a short period. The simple formula's speeds come from it, and the formula knows the exact coordinates, which the LLMs do not.
 
 % ======================================================================
 \section{Conclusion and Future Work}\label{sec:conclusion}
 
 \subsection{Conclusion}
-We asked how close an LLM, using only its own knowledge, can get to Google Maps on routes, distances and travel times in Bangalore. For Gemini, the answer depends on what is asked. It knows where well-known places are and names real roads, but it chooses only a fifth of the roads on Google's route. Its distances are fairly close, with a typical miss of 14\,\%. Its travel times are weaker, with a typical miss of 23\,\%, and their average looks right only because they are too slow in rush hour and too fast at night: Gemini adds a similar rush-hour penalty to every trip, set by the clock rather than by the road. It does worst on short trips, and its road-by-road figures are far less reliable than its totals. Removing rush-hour wording from the prompt reduced the morning bias but did not remove it, and the answer format changed the results as much as the wording. A one-line formula that knows the exact coordinates beat Gemini on both distance and time. Gemini's travel times are therefore a rough guide at best and no substitute for a navigation tool. The city-wide traffic data also showed that Google's static duration is not an empty-road time and that traffic on the main roads follows a daily cycle that peaks at 18:00.
+We asked how close LLMs, using only their own knowledge, can get to Google Maps on routes, distances and travel times in Bangalore. Gemini and ChatGPT both know where well-known places are and name real roads, but choose only a fifth or less of Google's roads. Gemini is clearly the closer of the two: its distances miss Google's by a typical 14\,\% and its times by 23\,\%, against 31\,\% and 32\,\% for ChatGPT, and it is closer on most routes. Both add a similar rush-hour penalty to every trip, set by the clock rather than by the road. Gemini's times are too slow in rush hour and too fast at night, so they look right only on average, while ChatGPT's are too slow at almost every hour. Both do worst on short trips, their road-by-road figures are far less reliable than their totals, and the answer format changed their results as much as the prompt wording did. A one-line formula that knows the exact coordinates beat both LLMs on distance and time, so their travel times are a rough guide at best and no substitute for a navigation tool. The city-wide traffic data also showed that Google's static duration is not an empty-road time and that traffic on the main roads follows a daily cycle that peaks at 18:00.
 
 \subsection{Future Work}
-The first next step is to run ChatGPT on the same queries. The benchmark can then test whether giving the model map context, such as the roads near a trip, closes the gap, and whether higher reasoning settings help. Asking at more morning times would test whether Bangalore's morning peak comes later than 08:00. More side-road routes would firm up the road-type comparison, and comparing with MapmyIndia, an India-focused map service, or with measured trip times would show how much of the gap lies in the reference.
+The benchmark can now test whether giving the models map context, such as the roads near a trip, closes the gap, whether higher reasoning settings help, and how other models compare. Asking at more morning times would test whether Bangalore's morning peak comes later than 08:00. More side-road routes would firm up the road-type comparison, and comparing with MapmyIndia, an India-focused map service, or with measured trip times would show how much of the gap lies in the reference.
 
 % ======================================================================
 \section*{Acknowledgment}
 We thank our supervisor, Prof. Vinayak Naik.
 
 \section*{Data Availability}
-Code and aggregate results: [repository link]. Raw Google Maps and LLM responses are not published, as Google's terms do not allow it.
+Code and aggregate results: \url{https://github.com/Ishan-Mehta/geospatial-traffic-analysis}. Raw Google Maps and LLM responses are not published, as Google's terms do not allow it.
 
 % References: each was checked to exist; the author should read each one before submission.
 \begin{thebibliography}{00}
